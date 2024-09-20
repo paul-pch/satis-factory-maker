@@ -1,0 +1,32 @@
+[
+    {
+        "name": "iron_ingot",
+        "description": "Un lingot d'acier",
+        "tier": 1
+    },
+    {
+        "name": "iron_plate",
+        "description": "Une plaque d'acier",
+        "tier": 1
+    },
+    {
+        "name": "copper_ingot",
+        "description": "Lingot de cuivre",
+        "tier": 1
+    },
+    {
+        "name": "copper_ore",
+        "description": "Minerai de cuivre",
+        "tier": 1
+    },
+    {
+        "name": "iron_ore",
+        "description": "Minerai de fer",
+        "tier": 1
+    },
+    {
+        "name": "iron_rod",
+        "description": "Tige de fer",
+        "tier": 1
+    }
+]
