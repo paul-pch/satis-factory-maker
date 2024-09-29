@@ -1,9 +1,10 @@
 [
     {
         "name": "iron_plate",
-        "machine": "Constructeur",
+        "machine": "fonderie",
         "input": {
-            "iron_ingot": 30
+            "iron_ingot": 40.0,
+            "iron_rod": 50.0
         },
         "output": {
             "iron_plate": 20

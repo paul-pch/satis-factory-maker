@@ -63,55 +63,55 @@ def create(
 @app.command()
 def edit(
     name: Annotated[str, typer.Option(prompt="Nom de la recette à modifier")],
-    new_name: Annotated[
+    machine: Annotated[
         Optional[str],
-        typer.Option(
-            prompt="Nouveau nom de la recette (laissez vide pour ne pas changer)"
-        ),
-    ] = "",
-    new_machine: Annotated[
-        Optional[str],
-        typer.Option(prompt="Nouvelle machine (laissez vide pour ne pas changer)"),
-    ] = "",
-    new_input: Annotated[
-        Optional[str],
-        typer.Option(
-            prompt="Nouveaux items d'entrée (séparés par des virgules, laissez vide pour ne pas changer)"
-        ),
-    ] = "",
-    new_output: Annotated[
-        Optional[str],
-        typer.Option(
-            prompt="Nouveaux items de sortie (séparés par des virgules, laissez vide pour ne pas changer)"
-        ),
-    ] = "",
+        typer.Option(prompt="Nouvelle machine (laisser vide pour ne pas modifier)"),
+    ],
 ):
     recipes = load_data("recipes.json")
+    recipe = next((r for r in recipes if r["name"] == name), None)
+    if recipe is None:
+        typer.echo(f"La recette '{name}' n'existe pas.")
+        raise typer.Exit(code=1)
 
-    for recipe in recipes:
-        if recipe["name"] == name:
-            if new_name:
-                recipe["name"] = new_name
-            if new_machine:
-                recipe["machine"] = new_machine
-            if new_input:
-                recipe["input"] = {
-                    item: float(rate)
-                    for item, rate in (pair.split(":") for pair in new_input.split(","))
-                }
-            if new_output:
-                recipe["output"] = {
-                    item: float(rate)
-                    for item, rate in (
-                        pair.split(":") for pair in new_output.split(",")
-                    )
-                }
+    if machine:
+        recipe["machine"] = machine
 
-            save_data("recipes.json", recipes)
-            typer.echo("Recette modifiée avec succès!")
-            return
+    items = load_data("items.json")
+    item_names = [item["name"] for item in items]
 
-    typer.echo(f"Recette '{name}' non trouvée.")
+    typer.echo("Items d'entrée actuels:")
+    for item, rate in recipe["input"].items():
+        typer.echo(f"{item}: {rate}")
+    while True:
+        item = typer.prompt(
+            "Nom de l'item d'entrée à modifier (ou 'done' pour terminer)"
+        )
+        if item.lower() == "done":
+            break
+        if item not in item_names:
+            typer.echo(f"L'item '{item}' n'existe pas. Veuillez réessayer.")
+            continue
+        rate = float(typer.prompt(f"Nouveau taux de {item} par minute"))
+        recipe["input"][item] = rate
+
+    typer.echo("Items de sortie actuels:")
+    for item, rate in recipe["output"].items():
+        typer.echo(f"{item}: {rate}")
+    while True:
+        item = typer.prompt(
+            "Nom de l'item de sortie à modifier (ou 'done' pour terminer)"
+        )
+        if item.lower() == "done":
+            break
+        if item not in item_names:
+            typer.echo(f"L'item '{item}' n'existe pas. Veuillez réessayer.")
+            continue
+        rate = float(typer.prompt(f"Nouveau taux de {item} par minute"))
+        recipe["output"][item] = rate
+
+    save_data("recipes.json", recipes)
+    typer.echo("Recette modifiée avec succès!")
 
 
 @app.command()
