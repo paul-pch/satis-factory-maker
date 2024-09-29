@@ -28,5 +28,95 @@
         "name": "iron_rod",
         "description": "Tige de fer",
         "tier": 1
+    },
+    {
+        "name": "wire",
+        "description": "Fil \u00e9lectrique",
+        "tier": 1
+    },
+    {
+        "name": "cable",
+        "description": "C\u00e2ble",
+        "tier": 1
+    },
+    {
+        "name": "screw",
+        "description": "Vis",
+        "tier": 1
+    },
+    {
+        "name": "reinforced_iron_plate",
+        "description": "Plaque d'acier renforc\u00e9e",
+        "tier": 1
+    },
+    {
+        "name": "rotor",
+        "description": "Rotor",
+        "tier": 1
+    },
+    {
+        "name": "stator",
+        "description": "Stator",
+        "tier": 1
+    },
+    {
+        "name": "motor",
+        "description": "Moteur",
+        "tier": 1
+    },
+    {
+        "name": "modular_frame",
+        "description": "Cadre modulaire",
+        "tier": 1
+    },
+    {
+        "name": "steel_pipe",
+        "description": "Tuyau d'acier",
+        "tier": 1
+    },
+    {
+        "name": "steel_beam",
+        "description": "Poutre d'acier",
+        "tier": 1
+    },
+    {
+        "name": "limestone",
+        "description": "Calcaire",
+        "tier": 1
+    },
+    {
+        "name": "concrete",
+        "description": "B\u00e9ton",
+        "tier": 1
+    },
+    {
+        "name": "plastic",
+        "description": "Plastique",
+        "tier": 2
+    },
+    {
+        "name": "rubber",
+        "description": "Caoutchou",
+        "tier": 2
+    },
+    {
+        "name": "copper_sheet",
+        "description": "Plaque de cuivre",
+        "tier": 1
+    },
+    {
+        "name": "water",
+        "description": "Eau",
+        "tier": 1
+    },
+    {
+        "name": "coal",
+        "description": "Charbon",
+        "tier": 0
+    },
+    {
+        "name": "oil",
+        "description": "P\u00e9trole",
+        "tier": 0
     }
 ]

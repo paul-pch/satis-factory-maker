@@ -1,0 +1,12 @@
+[
+    {
+        "name": "iron_plate",
+        "machine": "Constructeur",
+        "input": {
+            "iron_ingot": 30
+        },
+        "output": {
+            "iron_plate": 20
+        }
+    }
+]

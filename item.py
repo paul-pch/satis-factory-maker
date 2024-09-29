@@ -1,7 +1,11 @@
 import typer
-from utils import load_data, save_data
+
+from typing import Optional
+
 from rich.console import Console
 from rich.table import Table
+
+from utils import load_data, save_data, to_lower_snake_case
 
 app = typer.Typer()
 console = Console()
@@ -13,6 +17,7 @@ def create(
     tier: int = typer.Option(None, prompt="Tier de l'item (0-10, laissez vide pour ne pas spécifier)")
 ):
     items = load_data('items.json')
+    name = to_lower_snake_case(name)
     for item in items:
         if item['name'] == name:
             typer.echo(f"L'item '{name}' existe déjà.")
@@ -30,14 +35,18 @@ def create(
 @app.command()
 def edit(
     name: str = typer.Option(..., prompt="Nom de l'item à modifier"),
-    new_name: str = typer.Option(None, prompt="Nouveau nom de l'item (laissez vide pour ne pas changer)"),
+    new_name: str = typer.Option('', prompt="Nouveau nom de l'item (laissez vide pour ne pas changer)"),
     new_description: str = typer.Option(None, prompt="Nouvelle description de l'item (laissez vide pour ne pas changer)"),
     new_tier: int = typer.Option(None, prompt="Nouveau tier de l'item (0-10, laissez vide pour ne pas changer)")
 ):
+    typer.echo("0")
     items = load_data('items.json')
+    name = to_lower_snake_case(name)
+    typer.echo("1")
     for item in items:
         if item['name'] == name:
             if new_name:
+                new_name = to_lower_snake_case(new_name)
                 item['name'] = new_name
             if new_description:
                 item['description'] = new_description
@@ -47,12 +56,15 @@ def edit(
             typer.echo(f"Item '{name}' modifié avec succès!")
             return
     typer.echo(f"Item '{name}' non trouvé.")
+    typer.echo("2")
+
 
 @app.command()
 def delete(
     name: str = typer.Option(..., prompt="Nom de l'item à supprimer")
 ):
     items = load_data('items.json')
+    name = to_lower_snake_case(name)
     items = [item for item in items if item['name'] != name]
     save_data('items.json', items)
     typer.echo(f"Item '{name}' supprimé avec succès!")
