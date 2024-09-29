@@ -8,5 +8,25 @@
         "output": {
             "iron_plate": 20
         }
+    },
+    {
+        "name": "copper_ingot",
+        "machine": "fonderie",
+        "input": {
+            "copper_ore": 30.0
+        },
+        "output": {
+            "copper_ingot": 30.0
+        }
+    },
+    {
+        "name": "iron_ingot",
+        "machine": "fonderie",
+        "input": {
+            "iron_ore": 30.0
+        },
+        "output": {
+            "iron_ingot": 30.0
+        }
     }
 ]

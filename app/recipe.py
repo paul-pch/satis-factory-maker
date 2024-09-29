@@ -11,17 +11,23 @@ app = typer.Typer()
 
 
 @app.command()
-def add(
+def create(
     name: Annotated[str, typer.Option(prompt="Nom de la recette")],
     machine: Annotated[str, typer.Option(prompt="Machine")],
 ):
     input_items = {}
     output_items = {}
 
+    items = load_data("items.json")
+    item_names = [item["name"] for item in items]
+
     while True:
         item = typer.prompt("Nom de l'item d'entrée (ou 'done' pour terminer)")
         if item.lower() == "done":
             break
+        if item not in item_names:
+            typer.echo(f"L'item '{item}' n'existe pas. Veuillez réessayer.")
+            continue
         rate = float(typer.prompt(f"Taux de {item} par minute"))
         input_items[item] = rate
 
@@ -29,8 +35,17 @@ def add(
         item = typer.prompt("Nom de l'item de sortie (ou 'done' pour terminer)")
         if item.lower() == "done":
             break
+        if item not in item_names:
+            typer.echo(f"L'item '{item}' n'existe pas. Veuillez réessayer.")
+            continue
         rate = float(typer.prompt(f"Taux de {item} par minute"))
         output_items[item] = rate
+
+    if not input_items or not output_items:
+        typer.echo(
+            "Une recette doit avoir au moins un item d'entrée et un item de sortie."
+        )
+        raise typer.Exit(code=1)
 
     recipe = {
         "name": name,
