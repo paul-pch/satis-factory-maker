@@ -10,11 +10,13 @@ from app.recipe import app
 from app.utils import load_data, save_data
 
 
-class TestRecipeAdd(unittest.TestCase):
+class TestRecipeDelete(unittest.TestCase):
     def setUp(self):
         # Create a temporary file for testing
         self.temp_file = tempfile.NamedTemporaryFile(delete=False)
-        self.temp_file.write(b"[]")
+        self.temp_file.write(
+            b'[{"name": "test_recipe", "machine": "test_machine", "input": {"item1": 1.0}, "output": {"item2": 2.0}}]'
+        )
         self.temp_file.close()
 
         # Patch the load_data and save_data functions to use the temporary file
@@ -34,19 +36,28 @@ class TestRecipeAdd(unittest.TestCase):
         self.load_data_patch.stop()
         self.save_data_patch.stop()
 
-    def test_should_add_recipe(self):
+    def test_delete_recipe(self):
         runner = CliRunner()
-        result = runner.invoke(
-            app,
-            ["add", "--name", "test_recipe", "--machine", "test_machine"],
-            input="item1\n1.0\ndone\nitem2\n2.0\ndone\n",
-        )
+        result = runner.invoke(app, ["delete", "--name", "test_recipe"])
 
         # Check that the command was successful
         self.assertEqual(result.exit_code, 0)
-        self.assertIn("Recette ajoutée avec succès!", result.stdout)
+        self.assertIn("Recette supprimée avec succès!", result.stdout)
 
-        # Check that the recipe was added to the temporary file
+        # Check that the recipe was deleted from the temporary file
+        with open(self.temp_file.name, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            self.assertEqual(len(data), 0)
+
+    def test_delete_nonexistent_recipe(self):
+        runner = CliRunner()
+        result = runner.invoke(app, ["delete", "--name", "nonexistent_recipe"])
+
+        # Check that the command was successful
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Recette supprimée avec succès!", result.stdout)
+
+        # Check that the temporary file was not modified
         with open(self.temp_file.name, "r", encoding="utf-8") as f:
             data = json.load(f)
             self.assertEqual(len(data), 1)
