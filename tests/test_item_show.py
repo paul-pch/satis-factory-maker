@@ -9,7 +9,7 @@ from app.item import app
 from app.utils import load_data
 
 
-class TestItemShow(unittest.TestCase):
+class TestItemList(unittest.TestCase):
     def setUp(self):
         # Create a temporary file for testing
         self.temp_file = tempfile.NamedTemporaryFile(delete=False)
@@ -29,9 +29,9 @@ class TestItemShow(unittest.TestCase):
         os.remove(self.temp_file.name)
         self.load_data_patch.stop()
 
-    def test_should_show_all_items(self):
+    def test_should_list_all_items(self):
         runner = CliRunner()
-        result = runner.invoke(app, ["show"])
+        result = runner.invoke(app, ["list"])
 
         # Check that the command was successful
         self.assertEqual(result.exit_code, 0)

@@ -50,7 +50,7 @@ class TestRecipeAdd(unittest.TestCase):
         # TODO check values
 
         # Check that the recipe was added to the temporary file
-        with open(self.temp_file.name, "r") as f:
+        with open(self.temp_file.name, "r", encoding="utf-8") as f:
             data = json.load(f)
             self.assertEqual(len(data), 1)
             self.assertEqual(data[0]["name"], "test_recipe")
