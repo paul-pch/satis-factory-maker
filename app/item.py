@@ -1,20 +1,22 @@
-import typer
+#!/usr/bin/python3
 
-from typing import Optional
+import typer
 
 from rich.console import Console
 from rich.table import Table
+from typing import Optional
+from typing_extensions import Annotated
 
-from utils import load_data, save_data, to_lower_snake_case
+from .utils import load_data, save_data, to_lower_snake_case
 
 app = typer.Typer()
 console = Console()
 
 @app.command()
 def create(
-    name: str = typer.Option(..., prompt="Nom de l'item"),
-    description: str = typer.Option(..., prompt="Description de l'item"),
-    tier: int = typer.Option(None, prompt="Tier de l'item (0-10, laissez vide pour ne pas spécifier)")
+    name: Annotated[str, typer.Option(prompt="Nom de l'item")],
+    description: Annotated[str, typer.Option(prompt="Description de l'item")],
+    tier: Annotated[Optional[int], typer.Option(prompt="Tier de l'item (0-10, laissez vide pour ne pas spécifier)")]
 ):
     items = load_data('items.json')
     name = to_lower_snake_case(name)
@@ -34,15 +36,17 @@ def create(
 
 @app.command()
 def edit(
-    name: str = typer.Option(..., prompt="Nom de l'item à modifier"),
-    new_name: str = typer.Option('', prompt="Nouveau nom de l'item (laissez vide pour ne pas changer)"),
-    new_description: str = typer.Option(None, prompt="Nouvelle description de l'item (laissez vide pour ne pas changer)"),
-    new_tier: int = typer.Option(None, prompt="Nouveau tier de l'item (0-10, laissez vide pour ne pas changer)")
+    name: Annotated[str, typer.Option(prompt="Nom de l'item à modifier")],
+    new_name: Annotated[Optional[str], typer.Option(prompt="Nouveau nom de l'item")] = '',
+    new_description: Annotated[Optional[str], typer.Option(prompt="Nouvelle description de l'item")] = '',
+    new_tier: Annotated[Optional[int], typer.Option(prompt="Nouveau tier de l'item (0-10, entrez -1 pour ne pas changer)")] = -1
 ):
-    typer.echo("0")
+    if not new_name and not new_description and new_tier == -1:
+        typer.echo("Rien à modifier.")
+        return
+
     items = load_data('items.json')
     name = to_lower_snake_case(name)
-    typer.echo("1")
     for item in items:
         if item['name'] == name:
             if new_name:
@@ -56,18 +60,28 @@ def edit(
             typer.echo(f"Item '{name}' modifié avec succès!")
             return
     typer.echo(f"Item '{name}' non trouvé.")
-    typer.echo("2")
-
 
 @app.command()
 def delete(
-    name: str = typer.Option(..., prompt="Nom de l'item à supprimer")
+    name: Annotated[str, typer.Option(prompt="Nom de l'item à supprimer")]
 ):
     items = load_data('items.json')
     name = to_lower_snake_case(name)
-    items = [item for item in items if item['name'] != name]
+    item_exists = False
+
+    for i, item in enumerate(items):
+        if item['name'] == name:
+            items.pop(i)
+            item_exists = True
+            break
+
     save_data('items.json', items)
-    typer.echo(f"Item '{name}' supprimé avec succès!")
+
+    if item_exists:
+        typer.echo(f"Item '{name}' supprimé avec succès!")
+    else:
+        typer.echo(f"L'item '{name}' n'existait déjà pas !")
+
 
 @app.command()
 def show():

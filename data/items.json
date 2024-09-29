@@ -11,7 +11,7 @@
     },
     {
         "name": "copper_ingot",
-        "description": "Lingot de cuivre",
+        "description": "Un lingot de cuivre",
         "tier": 1
     },
     {
@@ -107,7 +107,7 @@
     {
         "name": "water",
         "description": "Eau",
-        "tier": 1
+        "tier": 0
     },
     {
         "name": "coal",
@@ -117,6 +117,11 @@
     {
         "name": "oil",
         "description": "P\u00e9trole",
+        "tier": 0
+    },
+    {
+        "name": "bauxite",
+        "description": "Bauxite",
         "tier": 0
     }
 ]

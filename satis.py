@@ -1,6 +1,6 @@
 import typer
 
-from item import app as item_app
+from app.item import app as item_app
 
 app = typer.Typer()
 app.add_typer(item_app, name="item")
