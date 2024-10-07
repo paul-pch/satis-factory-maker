@@ -1,53 +1,47 @@
-import unittest
-from unittest.mock import patch, mock_open
 import json
+import os
+import tempfile
+
 from typer.testing import CliRunner
 from app.search import app
 
-test_data = {
-    "items": [
-        {
-            "name": "Iron Ore",
-            "key_name": "iron-ore",
-            "tier": -1,
-            "stack_size": 100,
-        },
-        {
-            "name": "Steel Ingot",
-            "key_name": "steel-ingot",
-            "tier": 0,
-            "stack_size": 50,
-        },
-    ]
-}
 
-
-class TestSearch(unittest.TestCase):
-    def setUp(self):
+class TestItemSubcommand:
+    def setup_method(self):
         self.runner = CliRunner()
+        self.fake_data = {
+            "items": [
+                {
+                    "name": "Test Item 1",
+                    "key_name": "test_item_1",
+                    "tier": 1,
+                    "stack_size": 10,
+                },
+                {
+                    "name": "Test Item 2",
+                    "key_name": "test_item_2",
+                    "tier": 2,
+                    "stack_size": 20,
+                },
+            ]
+        }
+        self.temp_dir = tempfile.mkdtemp()
+        with open(os.path.join(self.temp_dir, "data.json"), "w", encoding="utf-8") as f:
+            json.dump(self.fake_data, f)
 
-    @patch("builtins.open", new_callable=mock_open, read_data=json.dumps(test_data))
-    def test_item_search(self, mock_file):
-        result = self.runner.invoke(app, ["item", "Iron"])
-        self.assertIn("Iron Ore", result.output)
-        self.assertNotIn("Steel Ingot", result.output)
+    def test_item_search(self):
+        result = self.runner.invoke(
+            app, ["item", "--query", "Test Item 1"], env={"DATA_DIR": self.temp_dir}
+        )
 
-    @patch("builtins.open", side_effect=FileNotFoundError)
-    def test_file_not_found(self, mock_file):
-        result = self.runner.invoke(app, ["item", "Iron"])
-        self.assertIn("Data file not found", result.output)
+        print(result.output)
 
-    @patch(
-        "json.load",
-        side_effect=json.JSONDecodeError(
-            "Expecting value: line 1 column 1 (char 0)", "", 0
-        ),
-    )
-    @patch("builtins.open", new_callable=mock_open, read_data="")
-    def test_json_decode_error(self, mock_file, mock_json):
-        result = self.runner.invoke(app, ["item", "Iron"])
-        self.assertIn("Error decoding JSON data", result.output)
+        assert result.exit_code == 0
+        assert "Test Item 1" in result.output
+        assert "test_item_1" in result.output
+        assert "1" in result.output
+        assert "10" in result.output
 
-
-if __name__ == "__main__":
-    unittest.main()
+        result = self.runner.invoke(app, ["item", "--query", "Non-existent Item"])
+        assert result.exit_code == 0
+        assert "No items found matching 'Non-existent Item'" in result.output
