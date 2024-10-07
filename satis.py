@@ -1,11 +1,9 @@
 import typer
 
-from app.item import app as item_app
-from app.recipe import app as recipe_app
+import app.data as data
 
 app = typer.Typer()
-app.add_typer(item_app, name="item")
-app.add_typer(recipe_app, name="recipe")
+app.add_typer(data.app, name="data")
 
 if __name__ == "__main__":
     app()
