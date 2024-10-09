@@ -1,7 +1,4 @@
-import json
-import os
-import tempfile
-
+from unittest.mock import patch
 from typer.testing import CliRunner
 from app.search import app
 
@@ -25,23 +22,20 @@ class TestItemSubcommand:
                 },
             ]
         }
-        self.temp_dir = tempfile.mkdtemp()
-        with open(os.path.join(self.temp_dir, "data.json"), "w", encoding="utf-8") as f:
-            json.dump(self.fake_data, f)
 
-    def test_item_search(self):
-        result = self.runner.invoke(
-            app, ["item", "--query", "Test Item 1"], env={"DATA_DIR": self.temp_dir}
-        )
-
-        print(result.output)
-
+    @patch("app.search.load_data")
+    def test_should_return_an_existing_item(self, mock_load_data):
+        mock_load_data.return_value = self.fake_data
+        result = self.runner.invoke(app, ["item", "--query", "Test Item 1"])
         assert result.exit_code == 0
         assert "Test Item 1" in result.output
         assert "test_item_1" in result.output
         assert "1" in result.output
         assert "10" in result.output
 
+    @patch("app.search.load_data")
+    def test_should_not_return_a_non_existing_item(self, mock_load_data):
+        mock_load_data.return_value = self.fake_data
         result = self.runner.invoke(app, ["item", "--query", "Non-existent Item"])
         assert result.exit_code == 0
         assert "No items found matching 'Non-existent Item'" in result.output

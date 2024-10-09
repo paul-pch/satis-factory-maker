@@ -5,11 +5,16 @@ import typer
 
 from rich.console import Console
 from rich.table import Table
-from rich.console import Console
 from typing_extensions import Annotated
 
 app = typer.Typer()
 console = Console()
+
+
+def load_data(file_path):
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data
 
 
 @app.command()
@@ -18,8 +23,7 @@ def item(query: Annotated[str, typer.Option()]):
     Search for items in the data.
     """
     try:
-        with open("data/data.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = load_data("data/data.json")
 
         items = data.get("items", [])
         matching_items = [
@@ -58,8 +62,7 @@ def recipe(query: Annotated[str, typer.Option()]):
     Search for recipes in the data.
     """
     try:
-        with open("data/data.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = load_data("data/data.json")
 
         recipes = data.get("recipes", [])
         matching_recipes = [

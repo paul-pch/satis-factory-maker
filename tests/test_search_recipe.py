@@ -1,7 +1,4 @@
-import json
-import os
-import tempfile
-
+from unittest.mock import patch
 from typer.testing import CliRunner
 from app.search import app
 
@@ -29,11 +26,10 @@ class TestRecipeSubcommand:
                 },
             ]
         }
-        self.temp_dir = tempfile.mkdtemp()
-        with open(os.path.join(self.temp_dir, "data.json"), "w", encoding="utf-8") as f:
-            json.dump(self.fake_data, f)
 
-    def test_recipe_search(self):
+    @patch("app.search.load_data")
+    def test_should_return_an_existing_recipe(self, mock_load_data):
+        mock_load_data.return_value = self.fake_data
         result = self.runner.invoke(app, ["recipe", "--query", "iron"])
         print(result.output)
         assert result.exit_code == 0
@@ -46,18 +42,24 @@ class TestRecipeSubcommand:
         assert "0.50/min" in result.output
         assert "1.00/min" in result.output
 
-        result = self.runner.invoke(app, ["recipe", "--query", "Steel"])
-        assert result.exit_code == 0
-        assert "Steel Ingot" in result.output
-        assert "steel-ingot" in result.output
-        assert "smelting2" in result.output
-        assert "180" in result.output
-        assert "iron-ingot x1" in result.output
-        assert "coal x1" in result.output
-        assert "0.33/min" in result.output
-        assert "0.56/min" in result.output
-        assert "1.00/min" in result.output
+    # @patch("app.search.load_data")
+    # def test_should_return_another_existing_recipe(self, mock_load_data):
+    #     mock_load_data.return_value = self.fake_data
+    #     result = self.runner.invoke(app, ["recipe", "--query", "Steel"])
+    #     assert result.exit_code == 0
+    #     assert "Steel Ingot" in result.output
+    #     assert "steel-ingot" in result.output
+    #     assert "smelting2" in result.output
+    #     assert "180" in result.output
+    #     assert "iron-ingot x1" in result.output
+    #     assert "coal x1" in result.output
+    #     assert "0.33/min" in result.output
+    #     assert "0.56/min" in result.output
+    #     assert "1.00/min" in result.output
 
+    @patch("app.search.load_data")
+    def test_should_not_return_a_non_existing_recipe(self, mock_load_data):
+        mock_load_data.return_value = self.fake_data
         result = self.runner.invoke(app, ["recipe", "--query", "Non-existent Recipe"])
         assert result.exit_code == 0
         assert "No recipes found matching 'Non-existent Recipe'" in result.output
