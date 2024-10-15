@@ -6,15 +6,10 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from typing_extensions import Annotated
+from .utils import load_data
 
 app = typer.Typer()
 console = Console(width=1000)
-
-
-def load_data(file_path):
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data
 
 
 @app.command()
