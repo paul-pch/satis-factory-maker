@@ -18,7 +18,7 @@ def load_data(file_path):
 
 
 @app.command()
-def item(query: Annotated[str, typer.Option()]):
+def item(query: Annotated[str, typer.Option(help="Item to search")]):
     """
     Search for items in the data.
     """
@@ -57,7 +57,7 @@ def item(query: Annotated[str, typer.Option()]):
 
 
 @app.command()
-def recipe(query: Annotated[str, typer.Option()]):
+def recipe(query: Annotated[str, typer.Option(help="Recipe to search")]):
     """
     Search for recipes in the data.
     """
