@@ -4,28 +4,27 @@ from app.search import app
 
 
 class TestRecipeSubcommand:
-    def setup_method(self):
-        self.runner = CliRunner()
-        self.fake_data = {
-            "recipes": [
-                {
-                    "name": "Iron Ingot",
-                    "key_name": "iron-ingot",
-                    "category": "smelting1",
-                    "time": 2,
-                    "ingredients": [["iron-ore", 1]],
-                    "products": [["iron-ingot", 1]],
-                },
-                {
-                    "name": "Steel Ingot",
-                    "key_name": "steel-ingot",
-                    "category": "smelting2",
-                    "time": 4,
-                    "ingredients": [["iron-ingot", 3], ["coal", 3]],
-                    "products": [["steel-ingot", 3]],
-                },
-            ]
-        }
+    runner = CliRunner()
+    fake_data = {
+        "recipes": [
+            {
+                "name": "Iron Ingot",
+                "key_name": "iron-ingot",
+                "category": "smelting1",
+                "time": 2,
+                "ingredients": [["iron-ore", 1]],
+                "products": [["iron-ingot", 1]],
+            },
+            {
+                "name": "Steel Ingot",
+                "key_name": "steel-ingot",
+                "category": "smelting2",
+                "time": 4,
+                "ingredients": [["iron-ingot", 3], ["coal", 3]],
+                "products": [["steel-ingot", 3]],
+            },
+        ]
+    }
 
     @patch("app.search.load_data")
     def test_should_return_an_existing_recipe(self, mock_load_data):

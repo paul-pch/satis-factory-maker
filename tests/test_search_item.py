@@ -4,29 +4,28 @@ from app.search import app
 
 
 class TestItemSubcommand:
-    def setup_method(self):
-        self.runner = CliRunner()
-        self.fake_data = {
-            "items": [
-                {
-                    "name": "Test Item 1",
-                    "key_name": "test_item_1",
-                    "tier": 1,
-                    "stack_size": 10,
-                },
-                {
-                    "name": "Test Item 2",
-                    "key_name": "test_item_2",
-                    "tier": 2,
-                    "stack_size": 20,
-                },
-                {
-                    "name": "Test Item 3",
-                    "key_name": "test_item_3",
-                    "tier": 3,
-                },
-            ]
-        }
+    runner = CliRunner()
+    fake_data = {
+        "items": [
+            {
+                "name": "Test Item 1",
+                "key_name": "test_item_1",
+                "tier": 1,
+                "stack_size": 10,
+            },
+            {
+                "name": "Test Item 2",
+                "key_name": "test_item_2",
+                "tier": 2,
+                "stack_size": 20,
+            },
+            {
+                "name": "Test Item 3",
+                "key_name": "test_item_3",
+                "tier": 3,
+            },
+        ]
+    }
 
     @patch("app.search.load_data")
     def test_should_return_an_existing_item(self, mock_load_data):
