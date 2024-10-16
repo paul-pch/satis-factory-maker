@@ -11,12 +11,22 @@ class TestBuildItem:
                 "name": "Test Item 1",
                 "key_name": "test_item_1",
             },
+            {
+                "name": "Test Item 3",
+                "key_name": "test_item_3",
+            },
         ],
         "recipes": [
             {
                 "name": "Test Recipe 1",
                 "products": [
                     ["test_item_1", 1],
+                ],
+            },
+            {
+                "name": "Test Recipe 2",
+                "products": [
+                    ["test_item_2", 1],
                 ],
             },
         ],
@@ -34,3 +44,10 @@ class TestBuildItem:
         result = self.runner.invoke(app, ["--query", "non_existing_item"])
         assert result.exit_code == 0
         assert "Item 'non_existing_item' not found." in result.output
+
+    @patch("app.build.load_data")
+    def test_should_not_build_item_without_recipe(self, mock_load_data):
+        mock_load_data.return_value = self.fake_data
+        result = self.runner.invoke(app, ["--query", "test_item_3"])
+        assert result.exit_code == 0
+        assert "No recipe found for item 'test_item_3'." in result.output
