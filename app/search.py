@@ -6,6 +6,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from typing_extensions import Annotated
+from typing import Optional
+
 from .utils import load_data, display_items, display_recipes
 
 app = typer.Typer()
@@ -39,7 +41,10 @@ def item(query: Annotated[str, typer.Option(help="Item to search")]):
 
 
 @app.command()
-def recipe(query: Annotated[str, typer.Option(help="Recipe to search")]):
+def recipe(
+    query: Annotated[str, typer.Option(help="Recipe to search")],
+    output: Annotated[Optional[bool], typer.Option(help="Permet de ne filter les recettes avec 'query' en 'product'")] = False,
+    ):
     """
     Search for recipes in the data.
     """
@@ -48,10 +53,18 @@ def recipe(query: Annotated[str, typer.Option(help="Recipe to search")]):
 
         recipes = data.get("recipes", [])
         matching_recipes = [
-            recipe for recipe in recipes if query.lower() in recipe["name"].lower()
+            recipe for recipe in recipes if (query.lower() in recipe["name"].lower() or query.lower() in recipe["key_name"].lower())
         ]
 
         if matching_recipes:
+
+            # Filter the matching recipes based on query being present in "products"
+            if output:
+                filtered_recipes = [
+                    recipe for recipe in matching_recipes if any(query.lower() in product[0].lower() for product in recipe["products"])
+                ]
+                matching_recipes = filtered_recipes
+
             display_recipes(matching_recipes, "Recipe Details")
         else:
             console.print(f"[yellow]No recipes found matching '{query}'[/yellow]")
