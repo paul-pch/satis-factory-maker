@@ -24,11 +24,16 @@ class TestItemSubcommand:
                 "key_name": "test_item_3",
                 "tier": 3,
             },
+            {
+                "name": "Test Item 4",
+                "key_name": "test-item-4",
+                "tier": 4,
+            }
         ]
     }
 
     @patch("app.search.load_data")
-    def test_should_return_an_existing_item(self, mock_load_data):
+    def test_should_return_an_existing_item_with_spaces(self, mock_load_data):
         mock_load_data.return_value = self.fake_data
         result = self.runner.invoke(app, ["item", "--query", "Test Item 1"])
         assert result.exit_code == 0
@@ -36,6 +41,24 @@ class TestItemSubcommand:
         assert "test_item_1" in result.output
         assert "1" in result.output
         assert "10" in result.output
+
+    @patch("app.search.load_data")
+    def test_should_return_another_existing_item_with_dash(self, mock_load_data):
+        mock_load_data.return_value = self.fake_data
+        result = self.runner.invoke(app, ["item", "--query", "item-4"])
+        assert result.exit_code == 0
+        assert "Test Item 4" in result.output
+        assert "test-item-4" in result.output
+        assert "4" in result.output
+
+    @patch("app.search.load_data")
+    def test_should_return_multiple_items_if_many(self, mock_load_data):
+        mock_load_data.return_value = self.fake_data
+        result = self.runner.invoke(app, ["item", "--query", "item"])
+        assert result.exit_code == 0
+        assert "Test Item 3" in result.output
+        assert "Test Item 4" in result.output
+        assert "10" in result.output # item 1
 
     @patch("app.search.load_data")
     def test_should_not_return_a_non_existing_item(self, mock_load_data):

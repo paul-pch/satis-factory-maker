@@ -22,6 +22,8 @@ To install **satis-factory-maker**, clone the repository and install the depende
 ## features
 
 * [ ] CRUD recipe
+* [ ] CRUD recipe faire la recherche sur les items entrants et ou sortants
 * [ ] GET Factory line from starting resources and target item
 * [ ] GET Factory line from target item with 100% efficiency
 
+* [ ] Faire les recherches avec des query qui tapent sur les noms techniques

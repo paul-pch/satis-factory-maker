@@ -22,7 +22,7 @@ def item(query: Annotated[str, typer.Option(help="Item to search")]):
 
         items = data.get("items", [])
         matching_items = [
-            item for item in items if query.lower() in item["name"].lower()
+            item for item in items if (query.lower() in item["name"].lower() or query.lower() in item["key_name"].lower())
         ]
 
         if matching_items:
