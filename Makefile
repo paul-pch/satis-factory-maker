@@ -5,7 +5,7 @@ PIP := $(VENV_BIN)/pip
 PYTHON_CMD := $(VENV_BIN)/python
 SOURCE_DIR := app
 
-.PHONY: install build integrate clean
+.PHONY: install test build integrate clean
 
 default: install
 
@@ -16,6 +16,9 @@ venv:
 install: venv
 	$(PIP) install -r requirements.txt
 	@echo "Dependencies installed"
+
+test:
+	pytest
 
 build: install
 	pyinstaller --onefile --name=satisfactory satis.py
