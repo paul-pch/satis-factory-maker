@@ -2,17 +2,20 @@ import json
 
 from rich.console import Console
 from rich.table import Table
+from typing import Any
+
+Json = dict[str, Any]
 
 console = Console(width=1000)
 
 
-def load_data(file_path):
+def load_data(file_path: str) -> Json:
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data
 
 
-def display_items(items, title):
+def display_items(items: list[dict[str, Any]], title: str) -> None:
     table = Table(title=title)
     table.add_column("Name", justify="left", style="cyan")
     table.add_column("Key Name", justify="left", style="magenta")
@@ -30,7 +33,7 @@ def display_items(items, title):
     console.print(table)
 
 
-def display_recipes(matching_recipes, title):
+def display_recipes(matching_recipes: list[dict[str, Any]], title: str) -> None:
     table = Table(title=title)
     table.add_column("Name", justify="left", style="cyan")
     table.add_column("Key Name", justify="left", style="magenta")

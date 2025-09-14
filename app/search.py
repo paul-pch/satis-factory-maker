@@ -4,11 +4,10 @@ import json
 import typer
 
 from rich.console import Console
-from rich.table import Table
 from typing_extensions import Annotated
 from typing import Optional
 
-from .utils import load_data, display_items, display_recipes
+from app.utils import load_data, display_items, display_recipes
 
 app = typer.Typer()
 console = Console(width=1000)

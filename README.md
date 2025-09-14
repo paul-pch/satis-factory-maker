@@ -8,8 +8,7 @@ To install **satis-factory-maker**, clone the repository and install the depende
 
 ```bash
     git clone https://github.com/yourusername/satis-factory-maker.git
-    cd taskit
-    pip install -r requirements.txt
+    cd satis-factory-maker
     make
 ```
 
@@ -21,7 +20,22 @@ To install **satis-factory-maker**, clone the repository and install the depende
 
 ## Features
 
+### Global
+
+* [ ] test - Setup unit testing system
+
+### Data
+
+* [x] fetch - Gathers json data of the game
+* [ ] verify - Checks the integrity of the current data file
+
+### Search
+
 * [x] Search item
 * [x] Search recipe
-* [ ] Build factory lines from target item with 100% efficiency
+
+
+### Build
+
+* [ ] Build factory lines from target item with 100% efficiency # TODO PCH à détailler 
 

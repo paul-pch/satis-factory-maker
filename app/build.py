@@ -5,12 +5,12 @@ import typer
 
 from rich.console import Console
 from typing_extensions import Annotated
-from .utils import load_data, display_recipes
-
+from app.utils import load_data, display_recipes
+from typing import Any
 
 app = typer.Typer()
 console = Console(width=1000)
-
+Json = dict[str, Any]
 
 @app.command()
 def item(
@@ -47,7 +47,7 @@ def item(
         complex_ingredients = check_ingredients(recipe, resources, fluids)
         if len(complex_ingredients) >= 1:
             console.print(
-                f"[red]The following ingredients have to be build: {', '.join(complex_ingredients)}.[/red]"
+                f"[red]The following ingredients have to be build: {[item['name'] for item in items]}.[/red]"
             )
             return
         else:
@@ -65,7 +65,7 @@ def item(
         console.print("[red]Error decoding JSON data.[/red]")
 
 
-def choose_recipe(matching_recipes):
+def choose_recipe(matching_recipes: list[Json]) -> Json:
     console.print("Choose a recipe to use:")
     for i, recipe in enumerate(matching_recipes):
         console.print(f"[{i+1}] {recipe['key_name']}")
@@ -81,8 +81,8 @@ def choose_recipe(matching_recipes):
         raise typer.Exit(code=1)
 
 
-def check_ingredients(recipe, resources, fluids):
-    complex_ingredients = []
+def check_ingredients(recipe: Json, resources: list[Json], fluids: list[Json]) -> list[Json]:
+    complex_ingredients: list[Json] = []
     for ingredient in recipe["ingredients"]:
         ingredient_key_name = ingredient[0]
         if not any(r["key_name"] == ingredient_key_name for r in resources) and not any(
@@ -92,9 +92,9 @@ def check_ingredients(recipe, resources, fluids):
     return complex_ingredients
 
 
-def get_recipes_for_item(recipes, query_item):
+def get_recipes_for_item(recipes: list[Json], query_item: str) -> list[Json]:
     # Get all the recipes that have the queried item in their products
-    matching_recipes = [
+    matching_recipes: list[Json] = [
         recipe
         for recipe in recipes
         if any(p[0] == query_item for p in recipe["products"])

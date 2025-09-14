@@ -1,11 +1,13 @@
 from unittest.mock import patch
 from typer.testing import CliRunner
 from app.search import app
+from typing import Any
+Json = dict[str, Any]
 
 
 class TestItemSubcommand:
     runner = CliRunner()
-    fake_data = {
+    fake_data: Json = {
         "items": [
             {
                 "name": "Test Item 1",
