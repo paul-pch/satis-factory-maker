@@ -1,7 +1,8 @@
-from unittest.mock import MagicMock, patch
-from typer.testing import CliRunner
 from app.search import app
+from typer.testing import CliRunner
 from typing import Any
+from unittest.mock import MagicMock, patch
+
 Json = dict[str, Any]
 
 
@@ -60,7 +61,7 @@ class TestItemSubcommand:
         assert result.exit_code == 0
         assert "Test Item 3" in result.output
         assert "Test Item 4" in result.output
-        assert "10" in result.output # item 1
+        assert "10" in result.output
 
     @patch("app.search.load_data")
     def test_should_not_return_a_non_existing_item(self, mock_load_data: MagicMock):
