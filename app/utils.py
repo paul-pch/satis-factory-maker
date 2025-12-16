@@ -1,8 +1,8 @@
 import json
+from typing import Any
 
 from rich.console import Console
 from rich.table import Table
-from typing import Any
 
 Json = dict[str, Any]
 
@@ -10,9 +10,15 @@ console = Console(width=1000)
 
 
 def load_data(file_path: str) -> Json:
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        console.print("[red]Data file not found. Please fetch the data first using 'python satis.py fetch_data'.[/red]")
+    except json.JSONDecodeError:
+        console.print("[red]Error decoding JSON data.[/red]")
     return data
+
 
 
 def display_items(items: list[dict[str, Any]], title: str) -> None:

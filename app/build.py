@@ -1,16 +1,25 @@
 #!/usr/bin/python3
 
-import json
-import typer
+import math
+from typing import Any, Literal
 
+import typer
 from rich.console import Console
 from typing_extensions import Annotated
-from app.utils import load_data, display_recipes
-from typing import Any
+
+from app.model import ProductionLine
+from app.utils import display_recipes, load_data
 
 app = typer.Typer()
 console = Console(width=1000)
 Json = dict[str, Any]
+
+DATA = load_data("data/data.json")
+ITEMS = DATA.get("items", [])
+RECIPES = DATA.get("recipes", [])
+RESOURCES = DATA.get("resources", [])
+FLUIDS = DATA.get("fluids", [])
+
 
 @app.command()
 def item(
@@ -22,48 +31,63 @@ def item(
     """
     Build factory layer based on item name.
     """
-    try:
-        data = load_data("data/data.json")
-        items = data.get("items", [])
-        recipes = data.get("recipes", [])
-        resources = data.get("resources", [])
-        fluids = data.get("fluids", [])
 
-        # Check if the initial item queried exists in the items array based on the key_name
-        item_exists = any(i["key_name"] == query for i in items)
-        if not item_exists:
-            console.print(f"[red]Item '{query}' not found.[/red]")
-            raise typer.Exit(code=1)
+    item_complex = get_item(query)
 
-        # Get the available recipe for item
-        matching_recipes = get_recipes_for_item(recipes, query)
-        display_recipes(matching_recipes, "Matching recipes")
+    factory: list[ProductionLine] = []
 
-        # Ask the user to choose a recipe
-        recipe = choose_recipe(matching_recipes)
-        display_recipes([recipe], "recette choisie")
+    plan(factory, item_complex, minute_rate, 0)
 
-        # Check if the recipe has any ingredients that are neither resources nor fluids
-        complex_ingredients = check_ingredients(recipe, resources, fluids)
-        if len(complex_ingredients) >= 1:
-            console.print(
-                f"[red]The following ingredients have to be build: {[item['name'] for item in items]}.[/red]"
-            )
-            return
-        else:
-            print("fin de build")
+    # Voir pour sauvegarder le build final si c'est utile
 
-        # FIN
+    console.print(factory)  # TODO faire une fonction display dédiée
 
-        # Voir pour sauvegarder le build final si c'est utile
 
-    except FileNotFoundError:
-        console.print(
-            "[red]Data file not found. Please fetch the data first using 'python satis.py fetch_data'.[/red]"
+def plan(factory: list[ProductionLine], item_complex: dict[str, Any], target_minute_rate: float, layer: int) -> None:
+    # Get the available recipe for item
+    matching_recipes = get_recipes_for_item(RECIPES, item_complex["key_name"])
+    display_recipes(matching_recipes, "Matching recipes")
+
+    # Ask the user to choose a recipe
+    recipe = choose_recipe(matching_recipes)
+    display_recipes([recipe], "recette choisie")
+    console.print(recipe)
+    console.print(item_complex)
+
+    default_recipe_minute_rate = get_minute_rate(recipe, item_complex["key_name"], "products")
+    num_machine: int = math.ceil(target_minute_rate / default_recipe_minute_rate)
+
+    factory.append(
+        ProductionLine(
+            item=item_complex["key_name"],
+            building=recipe["category"],  # machine type
+            num_machine=num_machine,
+            inputs=recipe["ingredients"],
+            outputs=recipe["products"],
+            layer=layer,
         )
-    except json.JSONDecodeError:
-        console.print("[red]Error decoding JSON data.[/red]")
+    )
 
+    # Check if the recipe has any ingredients that are neither resources nor fluids
+    complex_ingredients = check_ingredients(recipe)
+    if len(complex_ingredients) >= 1:
+        for ingredient in complex_ingredients:
+            ingredient_minute_rate = get_minute_rate(recipe, ingredient, "ingredients")
+            plan(factory, get_item(ingredient), ingredient_minute_rate * num_machine, layer + 1)
+
+
+def get_item(query_item: str) -> dict[str, Any]:
+    # Check if the item queried exists in the items array based on the key_name
+    item_found = next((i for i in ITEMS if i["key_name"] == query_item), None)
+    if not item_found:
+        console.print(f"[red]Item '{query_item}' not found.[/red]")
+        raise typer.Exit(code=1)
+    return item_found
+
+
+def get_minute_rate(recipe, item, source: Literal["products", "ingredients"]) -> float:
+    # Taux minute = (60 / (temps en secondes de production)) x Nombre produit de l'item en question pour cette recette
+    return (60 / int(recipe["time"])) * int(next(p[1] for p in recipe[source] if p[0] == item))
 
 def choose_recipe(matching_recipes: list[Json]) -> Json:
     console.print("Choose a recipe to use:")
@@ -81,12 +105,12 @@ def choose_recipe(matching_recipes: list[Json]) -> Json:
         raise typer.Exit(code=1)
 
 
-def check_ingredients(recipe: Json, resources: list[Json], fluids: list[Json]) -> list[Json]:
+def check_ingredients(recipe: Json) -> list[Json]:
     complex_ingredients: list[Json] = []
     for ingredient in recipe["ingredients"]:
         ingredient_key_name = ingredient[0]
-        if not any(r["key_name"] == ingredient_key_name for r in resources) and not any(
-            f["key_name"] == ingredient_key_name for f in fluids
+        if not any(r["key_name"] == ingredient_key_name for r in RESOURCES) and not any(
+            f["key_name"] == ingredient_key_name for f in FLUIDS
         ):
             complex_ingredients.append(ingredient_key_name)
     return complex_ingredients
