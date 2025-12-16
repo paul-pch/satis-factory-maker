@@ -1,22 +1,20 @@
 #!/usr/bin/python3
 
 import json
-import typer
-import requests
 
+import requests
+import typer
 from rich.console import Console
 from typing_extensions import Annotated
 
 app = typer.Typer()
 console = Console()
 
+DATASOURCE = "https://raw.githubusercontent.com/KirkMcDonald/satisfactory-calculator/master/data/data.json"
+
 
 @app.command()
-def fetch(
-    url: Annotated[
-        str, typer.Option()
-    ] = "https://raw.githubusercontent.com/KirkMcDonald/satisfactory-calculator/master/data/data.json"
-):
+def fetch(url: Annotated[str, typer.Option()] = DATASOURCE):
     """
     Fetch the JSON data from the given URL and save it locally.
     """

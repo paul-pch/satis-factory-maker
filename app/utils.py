@@ -1,10 +1,11 @@
 import json
 from typing import Any
 
+import typer
 from rich.console import Console
 from rich.table import Table
 
-from app.model import ProductionLine
+from app.models import ProductionLine, Recipe
 
 Json = dict[str, Any]
 
@@ -15,11 +16,13 @@ def load_data(file_path: str) -> Json:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+            return data
     except FileNotFoundError:
         console.print("[red]Data file not found. Please fetch the data first using 'python satis.py fetch_data'.[/red]")
+        raise typer.Exit(code=1)
     except json.JSONDecodeError:
         console.print("[red]Error decoding JSON data.[/red]")
-    return data
+        raise typer.Exit(code=1)
 
 
 def display_items(items: list[dict[str, Any]], title: str) -> None:
@@ -40,7 +43,7 @@ def display_items(items: list[dict[str, Any]], title: str) -> None:
     console.print(table)
 
 
-def display_recipes(matching_recipes: list[dict[str, Any]], title: str) -> None:
+def display_recipes(matching_recipes: list[Recipe], title: str) -> None:
     table = Table(title=title)
     table.add_column("Name", justify="left", style="cyan")
     table.add_column("Key Name", justify="left", style="magenta")
@@ -52,21 +55,10 @@ def display_recipes(matching_recipes: list[dict[str, Any]], title: str) -> None:
     table.add_column("Products Rate", justify="right", style="red")
 
     for matching_recipe in matching_recipes:
-        ingredients = ", ".join(
-            f"{ingredient[0]} x{ingredient[1]}"
-            for ingredient in matching_recipe["ingredients"]
-        )
-        products = ", ".join(
-            f"{product[0]} x{product[1]}" for product in matching_recipe["products"]
-        )
-        ingredients_rate = ", ".join(
-            f"{ingredient[1]/matching_recipe['time']*60:.2f}/min"
-            for ingredient in matching_recipe["ingredients"]
-        )
-        products_rate = ", ".join(
-            f"{product[1]/matching_recipe['time']*60:.2f}/min"
-            for product in matching_recipe["products"]
-        )
+        ingredients = ", ".join(f"{name} x{qty}" for name, qty in matching_recipe["ingredients"])
+        products = ", ".join(f"{name} x{qty}" for name, qty in matching_recipe["products"])
+        ingredients_rate = ", ".join(f"{qty / matching_recipe['time'] * 60:.2f}/min" for _, qty in matching_recipe["ingredients"])
+        products_rate = ", ".join(f"{qty / matching_recipe['time'] * 60:.2f}/min" for _, qty in matching_recipe["products"])
         table.add_row(
             matching_recipe["name"],
             matching_recipe["key_name"],
@@ -80,6 +72,7 @@ def display_recipes(matching_recipes: list[dict[str, Any]], title: str) -> None:
 
     console.print(table)
 
+
 def display_factory(factory: list[ProductionLine], title: str = "Factory") -> None:
     table = Table(title=title)
     table.add_column("Layer", justify="left", style="cyan")
@@ -92,10 +85,10 @@ def display_factory(factory: list[ProductionLine], title: str = "Factory") -> No
     table.add_column("Taux sorties", justify="right", style="red")
 
     for prod_line in factory:
-        ingredients = ", ".join(f"{ingredient[0]} x{ingredient[1]}" for ingredient in prod_line.inputs)
-        products = ", ".join(f"{product[0]} x{product[1]}" for product in prod_line.outputs)
-        ingredients_rate = ", ".join(f"{ingredient[1] / prod_line.time * 60:.2f}/min" for ingredient in prod_line.inputs)
-        products_rate = ", ".join(f"{product[1] / prod_line.time * 60:.2f}/min" for product in prod_line.outputs)
+        ingredients = ", ".join(f"{name} x{qty}" for name, qty in prod_line.inputs.items())
+        products = ", ".join(f"{name} x{qty}" for name, qty in prod_line.outputs.items())
+        ingredients_rate = ", ".join(f"{qty / prod_line.time * 60:.2f}/min" for _, qty in prod_line.inputs.items())
+        products_rate = ", ".join(f"{qty / prod_line.time * 60:.2f}/min" for _, qty in prod_line.outputs.items())
         table.add_row(
             str(prod_line.layer),
             prod_line.item,

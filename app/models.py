@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import TypedDict
 
 
 @dataclass
@@ -25,3 +26,12 @@ class ProductionLine:
             outputs=lines[0].outputs,
             layer=max(line.layer for line in lines),
         )
+
+
+class Recipe(TypedDict):
+    name: str
+    key_name: str
+    category: str
+    time: int
+    ingredients: list[tuple[str, float]]
+    products: list[tuple[str, float]]

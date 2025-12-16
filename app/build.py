@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 from typing_extensions import Annotated
 
-from app.model import ProductionLine
+from app.models import ProductionLine, Recipe
 from app.utils import display_factory, display_recipes, load_data
 
 app = typer.Typer()
@@ -22,12 +22,11 @@ RESOURCES = DATA.get("resources", [])
 FLUIDS = DATA.get("fluids", [])
 
 
-@app.command()
-def item(
+@app.callback(invoke_without_command=True)
+def build(
+    ctx: typer.Context,
     query: Annotated[str, typer.Option(help="Item to build")],
-    minute_rate: Annotated[
-        float, typer.Option(help="'Minute rate' wanted for the item")
-    ],
+    minute_rate: Annotated[float, typer.Option(help="'Minute rate' wanted for the item")],
 ):
     """
     Build factory layer based on item name.
@@ -41,13 +40,11 @@ def item(
 
     factory = compact(factory)
 
-    # Voir pour sauvegarder le build final si c'est utile
-
     display_factory(factory)
 
 
-def check_ingredients(recipe: Json) -> list[Json]:
-    complex_ingredients: list[Json] = []
+def check_ingredients(recipe: Recipe) -> list[str]:
+    complex_ingredients: list[str] = []
     for ingredient in recipe["ingredients"]:
         ingredient_key_name = ingredient[0]
         if not any(r["key_name"] == ingredient_key_name for r in RESOURCES) and not any(
@@ -57,7 +54,7 @@ def check_ingredients(recipe: Json) -> list[Json]:
     return complex_ingredients
 
 
-def choose_recipe(matching_recipes: list[Json]) -> Json:
+def choose_recipe(matching_recipes: list[Recipe]) -> Recipe:
     console.print("Choose a recipe to use:")
     for i, recipe in enumerate(matching_recipes):
         console.print(f"[{i + 1}] {recipe['key_name']}")
@@ -75,7 +72,7 @@ def choose_recipe(matching_recipes: list[Json]) -> Json:
 
 def compact(factory: list[ProductionLine]) -> list[ProductionLine]:
     # Merge duplicate items production line
-    grouped = defaultdict(list)
+    grouped: defaultdict[str, list[ProductionLine]] = defaultdict(list)
     for line in factory:
         grouped[line.item].append(line)
 
@@ -97,14 +94,14 @@ def get_item(query_item: str) -> dict[str, Any]:
     return item_found
 
 
-def get_minute_rate(recipe, item, source: Literal["products", "ingredients"]) -> float:
+def get_minute_rate(recipe: Recipe, item: str, source: Literal["products", "ingredients"]) -> float:
     # Taux minute = (60 / (temps en secondes de production)) x Nombre produit de l'item en question pour cette recette
     return (60 / int(recipe["time"])) * int(next(p[1] for p in recipe[source] if p[0] == item))
 
 
-def get_recipes_for_item(recipes: list[Json], query_item: str) -> list[Json]:
+def get_recipes_for_item(recipes: list[Recipe], query_item: str) -> list[Recipe]:
     # Get all the recipes that have the queried item in their products
-    matching_recipes: list[Json] = [recipe for recipe in recipes if any(p[0] == query_item for p in recipe["products"])]
+    matching_recipes: list[Recipe] = [recipe for recipe in recipes if any(p[0] == query_item for p in recipe["products"])]
     if not matching_recipes:
         console.print(f"[red]No recipe found for item '{query_item}'.[/red]")
         raise typer.Exit(code=1)
@@ -119,19 +116,18 @@ def plan(factory: list[ProductionLine], item_complex: dict[str, Any], target_min
 
     # Ask the user to choose a recipe
     recipe = choose_recipe(matching_recipes)
-    display_recipes([recipe], "recette choisie")
 
     default_recipe_minute_rate = get_minute_rate(recipe, item_complex["key_name"], "products")
     num_machine: int = math.ceil(target_minute_rate / default_recipe_minute_rate)
 
     factory.append(
         ProductionLine(
-            item=recipe["products"][0][0],  # On prend le nom originel du produit
-            building=recipe["category"],  # machine type
+            item=recipe["products"][0][0],
+            building=recipe["category"],
             num_machine=num_machine,
             time=recipe["time"],
-            inputs=recipe["ingredients"],
-            outputs=recipe["products"],
+            inputs=dict(recipe["ingredients"]),
+            outputs=dict(recipe["products"]),
             layer=layer,
         )
     )
@@ -141,6 +137,9 @@ def plan(factory: list[ProductionLine], item_complex: dict[str, Any], target_min
     if len(complex_ingredients) >= 1:
         for ingredient in complex_ingredients:
             ingredient_minute_rate = get_minute_rate(recipe, ingredient, "ingredients")
-            console.print(ingredient_minute_rate)
-            console.print(ingredient_minute_rate * num_machine)
-            plan(factory, get_item(ingredient), ingredient_minute_rate * num_machine, layer + 1)
+            plan(
+                factory,
+                get_item(ingredient),
+                ingredient_minute_rate * num_machine,
+                layer + 1,
+            )

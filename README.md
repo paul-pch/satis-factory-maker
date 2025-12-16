@@ -37,4 +37,5 @@ To install **satis-factory-maker**, clone the repository and install the depende
 * * [x] Vérifier les plans simples
 * * [ ] Afficher les quantités de ressources/fluides nécessaires
 * * [ ] Afficher les surproduction ou les équilibrage sur les Productionline
+* * [ ] Ajouter une feature de sauvegarde/lecture des usines 
 
