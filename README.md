@@ -29,13 +29,12 @@ To install **satis-factory-maker**, clone the repository and install the depende
 * [x] fetch - Gathers json data of the game
 * [ ] verify - Checks the integrity of the current data file
 
-### Search
-
-* [x] Search item
-* [x] Search recipe
-
 
 ### Build
 
-* [ ] Build factory lines from target item with 100% efficiency # TODO PCH à détailler 
+* [ ] Build factory lines from target item with 100% efficiency
+* * [ ] Algo grosse maille
+* * [ ] Vérifier les plans simples
+* * [ ] Afficher les quantités de ressources/fluides nécessaires
+* * [ ] Afficher les surproduction ou les équilibrage sur les Productionline
 
