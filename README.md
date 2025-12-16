@@ -33,8 +33,8 @@ To install **satis-factory-maker**, clone the repository and install the depende
 ### Build
 
 * [ ] Build factory lines from target item with 100% efficiency
-* * [ ] Algo grosse maille
-* * [ ] Vérifier les plans simples
+* * [x] Algo grosse maille
+* * [x] Vérifier les plans simples
 * * [ ] Afficher les quantités de ressources/fluides nécessaires
 * * [ ] Afficher les surproduction ou les équilibrage sur les Productionline
 
