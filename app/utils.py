@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from typing import Any
 
 import typer
@@ -85,10 +86,12 @@ def display_factory(factory: list[ProductionLine], title: str = "Factory") -> No
     table.add_column("Taux sorties", justify="right", style="red")
 
     for prod_line in factory:
-        ingredients = ", ".join(f"{name} x{qty}" for name, qty in prod_line.inputs.items())
-        products = ", ".join(f"{name} x{qty}" for name, qty in prod_line.outputs.items())
-        ingredients_rate = ", ".join(f"{qty / prod_line.time * 60:.2f}/min" for _, qty in prod_line.inputs.items())
-        products_rate = ", ".join(f"{qty / prod_line.time * 60:.2f}/min" for _, qty in prod_line.outputs.items())
+        ingredients = ", ".join(f"{name} x{qty}" for name, qty in prod_line.recipe["ingredients"])
+        products = ", ".join(f"{name} x{qty}" for name, qty in prod_line.recipe["products"])
+        ingredients_rate = ", ".join(
+            f"{qty / prod_line.recipe['time'] * 60:.2f}/min" for _, qty in prod_line.recipe["ingredients"]
+        )
+        products_rate = ", ".join(f"{qty / prod_line.recipe['time'] * 60:.2f}/min" for _, qty in prod_line.recipe["products"])
         table.add_row(
             str(prod_line.layer),
             prod_line.item,
@@ -98,6 +101,20 @@ def display_factory(factory: list[ProductionLine], title: str = "Factory") -> No
             ingredients_rate,
             products,
             products_rate,
+        )
+
+    console.print(table)
+
+
+def display_resources(raw_resources: defaultdict[str, float], title: str = "Ressources requises") -> None:
+    table = Table(title=title)
+    table.add_column("Item", justify="left", style="cyan")
+    table.add_column("Taux minute", justify="left", style="red")
+
+    for raw in raw_resources:
+        table.add_row(
+            raw,
+            str(raw_resources[raw]),
         )
 
     console.print(table)

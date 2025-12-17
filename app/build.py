@@ -9,7 +9,7 @@ from rich.console import Console
 from typing_extensions import Annotated
 
 from app.models import ProductionLine, Recipe
-from app.utils import display_factory, display_recipes, load_data
+from app.utils import display_factory, display_recipes, display_resources, load_data
 
 app = typer.Typer()
 console = Console(width=1000)
@@ -39,8 +39,10 @@ def build(
     plan(factory, item_complex, minute_rate, 0)
 
     factory = compact(factory)
-
     display_factory(factory)
+
+    raw_resources = get_resources_rate(factory)
+    display_resources(raw_resources)
 
 
 def check_ingredients(recipe: Recipe) -> list[str]:
@@ -109,6 +111,15 @@ def get_recipes_for_item(recipes: list[Recipe], query_item: str) -> list[Recipe]
     return matching_recipes
 
 
+def get_resources_rate(factory: list[ProductionLine]) -> defaultdict[str, float]:
+    raw_resources: defaultdict[str, float] = defaultdict(float)
+    for line in factory:
+        for resource in line.recipe["ingredients"]:
+            if any(r["key_name"] == resource[0] for r in RESOURCES) or any(f["key_name"] == resource[0] for f in FLUIDS):
+                raw_resources[resource[0]] += line.num_machine * get_minute_rate(line.recipe, resource[0], "ingredients")
+    return raw_resources
+
+
 def plan(factory: list[ProductionLine], item_complex: dict[str, Any], target_minute_rate: float, layer: int) -> None:
     # Get the available recipe for item
     matching_recipes = get_recipes_for_item(RECIPES, item_complex["key_name"])
@@ -125,9 +136,7 @@ def plan(factory: list[ProductionLine], item_complex: dict[str, Any], target_min
             item=recipe["products"][0][0],
             building=recipe["category"],
             num_machine=num_machine,
-            time=recipe["time"],
-            inputs=dict(recipe["ingredients"]),
-            outputs=dict(recipe["products"]),
+            recipe=recipe,
             layer=layer,
         )
     )
