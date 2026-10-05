@@ -19,7 +19,9 @@ def load_data(file_path: str) -> Json:
             data = json.load(f)
             return data
     except FileNotFoundError:
-        console.print("[red]Data file not found. Please generate it first using 'python satis.py parse --file <Docs.json>'.[/red]")
+        console.print(
+            "[red]Data file not found. Please generate it first using 'python satis.py parse --file <Docs.json>'.[/red]"
+        )
         raise typer.Exit(code=1)
     except json.JSONDecodeError:
         console.print("[red]Error decoding JSON data.[/red]")
@@ -44,8 +46,11 @@ def display_items(items: list[dict[str, Any]], title: str) -> None:
     console.print(table)
 
 
-def display_recipes(matching_recipes: list[Recipe], title: str) -> None:
+def display_recipes(matching_recipes: list[Recipe], title: str, numbered: bool = False) -> None:
     table = Table(title=title)
+    if numbered:
+        # Number used to choose the recipe in the build prompt
+        table.add_column("#", justify="right", style="bold")
     table.add_column("Name", justify="left", style="cyan")
     table.add_column("Key Name", justify="left", style="magenta")
     table.add_column("Category", justify="left", style="green")
@@ -55,12 +60,13 @@ def display_recipes(matching_recipes: list[Recipe], title: str) -> None:
     table.add_column("Products", justify="left", style="red")
     table.add_column("Products Rate", justify="right", style="red")
 
-    for matching_recipe in matching_recipes:
+    for i, matching_recipe in enumerate(matching_recipes, start=1):
         ingredients = ", ".join(f"{name} x{qty}" for name, qty in matching_recipe["ingredients"])
         products = ", ".join(f"{name} x{qty}" for name, qty in matching_recipe["products"])
         ingredients_rate = ", ".join(f"{qty / matching_recipe['time'] * 60:.2f}/min" for _, qty in matching_recipe["ingredients"])
         products_rate = ", ".join(f"{qty / matching_recipe['time'] * 60:.2f}/min" for _, qty in matching_recipe["products"])
         table.add_row(
+            *([str(i)] if numbered else []),
             matching_recipe["name"],
             matching_recipe["key_name"],
             matching_recipe["category"],

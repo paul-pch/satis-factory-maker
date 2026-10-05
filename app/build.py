@@ -34,14 +34,18 @@ def build(
     item_complex = get_item(query)
 
     factory: list[ProductionLine] = []
+    imports: defaultdict[str, float] = defaultdict(float)
 
-    plan(factory, item_complex, minute_rate, 0)
+    plan(factory, imports, item_complex, minute_rate, 0)
 
     factory = compact(factory)
     display_factory(factory)
 
     raw_resources = get_resources_rate(factory)
     display_resources(raw_resources)
+
+    if imports:
+        display_resources(imports, "Imports en gare")
 
 
 def check_ingredients(recipe: Recipe) -> list[str]:
@@ -55,16 +59,20 @@ def check_ingredients(recipe: Recipe) -> list[str]:
     return complex_ingredients
 
 
-def choose_recipe(matching_recipes: list[Recipe]) -> Recipe:
+def choose_recipe(matching_recipes: list[Recipe]) -> Recipe | None:
+    """Return the chosen recipe, or None when the item is imported (unlimited supply from a train station)."""
     console.print("Choose a recipe to use:")
+    console.print("[0] import (unlimited supply from a train station)")
     for i, recipe in enumerate(matching_recipes):
         console.print(f"[{i + 1}] {recipe['key_name']}")
     choice = typer.prompt("Enter the number of the recipe you want to use")
     try:
         choice = int(choice)
-        if choice < 1 or choice > len(matching_recipes):
+        if choice < 0 or choice > len(matching_recipes):
             console.print("[red]Invalid choice.[/red]")
             raise typer.Exit(code=1)
+        if choice == 0:
+            return None
         return matching_recipes[choice - 1]
     except ValueError:
         console.print("[red]Invalid choice.[/red]")
@@ -119,13 +127,22 @@ def get_resources_rate(factory: list[ProductionLine]) -> defaultdict[str, float]
     return raw_resources
 
 
-def plan(factory: list[ProductionLine], item_complex: dict[str, Any], target_minute_rate: float, layer: int) -> None:
+def plan(
+    factory: list[ProductionLine],
+    imports: defaultdict[str, float],
+    item_complex: dict[str, Any],
+    target_minute_rate: float,
+    layer: int,
+) -> None:
     # Get the available recipe for item
     matching_recipes = get_recipes_for_item(RECIPES, item_complex["key_name"])
-    display_recipes(matching_recipes, "Matching recipes")
+    display_recipes(matching_recipes, "Matching recipes", numbered=True)
 
     # Ask the user to choose a recipe
     recipe = choose_recipe(matching_recipes)
+    if recipe is None:
+        imports[item_complex["key_name"]] += target_minute_rate
+        return
 
     default_recipe_minute_rate = get_minute_rate(recipe, item_complex["key_name"], "products")
     num_machine: int = math.ceil(target_minute_rate / default_recipe_minute_rate)
@@ -147,6 +164,7 @@ def plan(factory: list[ProductionLine], item_complex: dict[str, Any], target_min
             ingredient_minute_rate = get_minute_rate(recipe, ingredient, "ingredients")
             plan(
                 factory,
+                imports,
                 get_item(ingredient),
                 ingredient_minute_rate * num_machine,
                 layer + 1,

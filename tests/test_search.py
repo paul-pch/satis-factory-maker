@@ -51,6 +51,11 @@ class TestSearchRecipe:
         assert "20.00/min" in result.output  # standard recipe: 2 plates / 6 s
         assert "40.00/min" in result.output  # alternate recipe: 4 plates / 6 s
 
+    def test_should_not_number_recipes(self, patched_data):
+        result = runner.invoke(app, ["recipe", "--query", "Iron Ingot"])
+        assert result.exit_code == 0
+        assert "#" not in result.output
+
     def test_should_report_no_match(self, patched_data):
         result = runner.invoke(app, ["recipe", "--query", "copper"])
         assert result.exit_code == 0

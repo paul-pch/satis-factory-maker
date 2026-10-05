@@ -41,7 +41,6 @@ To install **satis-factory-maker**, clone the repository and install the depende
 * * [ ] Ajouter la possibilité de cibler 2 items avec 2 taux minutes
 * * [ ] Ajouter la possibilité de pas traiter un item (quand il est importé comme le caoutchou/plastique)
 * * [ ] Contraindre le build d'une usine pour que chaque item soit en surproduction
-* * [ ] Possibilité de considérer un item comme illimité (alimenté en gare)
 * * [ ] Possibilité de ne pas faire de limit rate ? (defaut output de recipe)
 
 ### Problématiques

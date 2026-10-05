@@ -7,10 +7,14 @@ from app.models import ProductionLine
 runner = CliRunner()
 
 
+def rows(output: str) -> list[list[str]]:
+    """Cells of every body row of the Rich tables in output."""
+    return [[cell.strip() for cell in line.strip("│ ").split("│")] for line in output.splitlines() if line.startswith("│")]
+
+
 def row(output: str, first_cell: str) -> list[str]:
     """Cells of the Rich table row whose first cell is first_cell."""
-    for line in output.splitlines():
-        cells = [cell.strip() for cell in line.strip("│ ").split("│")]
+    for cells in rows(output):
         if cells[0] == first_cell:
             return cells
     raise AssertionError(f"no row {first_cell!r} in output")
@@ -87,6 +91,43 @@ class TestBuildCommand:
         assert row(factory, "1")[1:4] == ["iron-ingot", "smelting1", "4"]
         assert row(resources, "iron-ore") == ["iron-ore", "120.0"]
         assert row(resources, "water") == ["water", "60.0"]
+
+    def test_should_import_an_item_instead_of_producing_it(self, patched_data):
+        # reinforced-iron-plate, iron-plate, iron-ingot, then screws imported (choice 0)
+        result = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n1\n1\n0\n")
+        assert result.exit_code == 0, result.output
+        factory, rest = result.output.split("Factory")[-1].split("Ressources requises")
+        resources, imports = rest.split("Imports en gare")
+        assert [cells[1] for cells in rows(factory)] == ["reinforced-iron-plate", "iron-plate", "iron-ingot"]
+        assert row(resources, "iron-ore") == ["iron-ore", "60.0"]
+        assert row(imports, "screws") == ["screws", "60.0"]
+
+    def test_should_sum_imports_of_the_same_item(self, patched_data):
+        # iron-ingot is imported twice: 60/min for the plates and 30/min for the rods
+        result = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n1\n0\n1\n1\n0\n")
+        assert result.exit_code == 0, result.output
+        factory, rest = result.output.split("Factory")[-1].split("Ressources requises")
+        resources, imports = rest.split("Imports en gare")
+        assert [cells[1] for cells in rows(factory)] == ["reinforced-iron-plate", "iron-plate", "screws", "iron-rod"]
+        assert "iron-ore" not in resources
+        assert row(imports, "iron-ingot") == ["iron-ingot", "90.0"]
+
+    def test_should_not_display_imports_when_nothing_is_imported(self, patched_data):
+        result = runner.invoke(app, ["--query", "iron-ingot", "--minute-rate", "30"], input="1\n")
+        assert result.exit_code == 0, result.output
+        assert "Imports en gare" not in result.output
+
+    def test_should_offer_import_as_choice_zero(self, patched_data):
+        result = runner.invoke(app, ["--query", "iron-ingot", "--minute-rate", "30"], input="0\n")
+        assert result.exit_code == 0, result.output
+        assert "[0] import" in result.output
+        assert row(result.output.split("Imports en gare")[-1], "iron-ingot") == ["iron-ingot", "30.0"]
+
+    def test_should_number_recipes_in_the_matching_table(self, patched_data):
+        result = runner.invoke(app, ["--query", "iron-plate", "--minute-rate", "20"], input="1\n1\n")
+        assert result.exit_code == 0, result.output
+        matching = result.output.split("Matching recipes")[1].split("Choose a recipe")[0]
+        assert [cells[:2] for cells in rows(matching)] == [["1", "Iron Plate"], ["2", "Alternate: Iron Wire Plate"]]
 
     def test_should_fail_on_unknown_item(self, patched_data):
         result = runner.invoke(app, ["--query", "copper-plate", "--minute-rate", "10"])
