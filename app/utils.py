@@ -19,7 +19,7 @@ def load_data(file_path: str) -> Json:
             data = json.load(f)
             return data
     except FileNotFoundError:
-        console.print("[red]Data file not found. Please fetch the data first using 'python satis.py fetch_data'.[/red]")
+        console.print("[red]Data file not found. Please generate it first using 'python satis.py parse --file <Docs.json>'.[/red]")
         raise typer.Exit(code=1)
     except json.JSONDecodeError:
         console.print("[red]Error decoding JSON data.[/red]")

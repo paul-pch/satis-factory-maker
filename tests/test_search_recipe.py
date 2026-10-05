@@ -1,6 +1,5 @@
 from app.search import app
-from click.testing import Result
-from typer.testing import CliRunner
+from typer.testing import CliRunner, Result
 from typing import Any
 from unittest.mock import MagicMock, patch
 

@@ -1,11 +1,11 @@
 import typer
 
-import app.data as data
-import app.search as search
 import app.build as build
+import app.parse as parse
+import app.search as search
 
 app = typer.Typer()
-app.add_typer(data.app, name="data")
+app.command()(parse.parse)
 app.add_typer(search.app, name="search")
 app.add_typer(build.app, name="build")
 

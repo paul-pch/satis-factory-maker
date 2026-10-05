@@ -2,11 +2,10 @@
 
 import math
 from collections import defaultdict
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 import typer
 from rich.console import Console
-from typing_extensions import Annotated
 
 from app.models import ProductionLine, Recipe
 from app.utils import display_factory, display_recipes, display_resources, load_data

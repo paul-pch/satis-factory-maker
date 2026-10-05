@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 
 
+from typing import Annotated
+
 import typer
 from rich.console import Console
-from typing_extensions import Annotated
 
 from app.utils import display_items, display_recipes, load_data
 

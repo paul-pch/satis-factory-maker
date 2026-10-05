@@ -1,35 +1,29 @@
-PYTHON := python3
-VENV_DIR := venv
-VENV_BIN := $(VENV_DIR)/bin
-PIP := $(VENV_BIN)/pip
-PYTHON_CMD := $(VENV_BIN)/python
-SOURCE_DIR := app
+APP_NAME := satisfactory
+ENTRYPOINT := satis.py
+DIST_DIR := dist
 
-.PHONY: install test build integrate clean
+.DEFAULT_GOAL := all
+.PHONY: all sync test build integrate clean
 
-default: install
+all: sync build integrate
 
-venv:
-	$(PYTHON) -m venv $(VENV_DIR)
-	@echo "Virtual environment created in $(VENV_DIR)"
-
-install: venv
-	$(PIP) install -r requirements.txt
-	@echo "Dependencies installed"
+sync:
+	uv sync
+	@echo "Environment synced"
 
 test:
-	pytest
+	uv run pytest
 
-build: install
-	pyinstaller --onefile --name=satisfactory satis.py
-	@echo "Application built"
+build: sync
+	uv run pyinstaller --clean --onefile --name=$(APP_NAME) $(ENTRYPOINT)
+	@echo "Application built in $(DIST_DIR)/$(APP_NAME)"
 
 integrate:
-	grep -q '$(CURDIR)' ~/.zshrc || echo 'export PATH=$(CURDIR)/dist:$$PATH' >> ~/.zshrc
+	grep -q '$(CURDIR)/$(DIST_DIR)' ~/.zshrc || echo 'export PATH=$(CURDIR)/$(DIST_DIR):$$PATH' >> ~/.zshrc
 	@echo "Application integrated into PATH"
 	@echo "-> Please reload your terminal"
 
 clean:
-	rm -rf dist build *.egg-info coverage-report .coverage .pytest_cache **/__pycache__ satisfactory.spec
-	rm -rf venv
+	rm -rf $(DIST_DIR) build *.egg-info coverage-report .coverage .pytest_cache **/__pycache__ $(APP_NAME).spec
+	rm -rf .venv
 	@echo "Build artifacts removed"
