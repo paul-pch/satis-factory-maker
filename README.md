@@ -4,34 +4,56 @@ Python client that helps to build factory or only factory layer depending on eit
 
 ## Installation
 
-To install **satis-factory-maker**, clone the repository and install the dependencies:
+Requires [uv](https://docs.astral.sh/uv/). Clone the repository, then:
 
 ```bash
-    git clone https://github.com/yourusername/satis-factory-maker.git
-    cd satis-factory-maker
     make
 ```
+
+`make` syncs the environment (`uv sync`), builds the `dist/satisfactory` binary and adds `dist/` to the `PATH` in `~/.zshrc`. Use `make sync` to only install the dependencies and `make test` to run the tests.
 
 ## Usage
 
 ```bash
-    satis --help
+    satisfactory --help                     # or: uv run satis.py --help
 ```
-
-## Features
-
-### Global
-
-* [ ] test - Setup unit testing system
 
 ### Data
 
-* [x] parse - Builds `data/data.json` from the game file `CommunityResources/Docs/en-US.json` (`satis.py parse --file <path>`)
+Factory commands read `data/data.json`, generated from the game's own data file (`<Satisfactory install>/CommunityResources/Docs/en-US.json`):
+
+```bash
+    satisfactory parse --file <path/to/en-US.json>     # writes data/data.json (--output to change)
+```
+
+Regenerate and commit `data/data.json` after each game update rather than editing it.
+
+### Search
+
+```bash
+    satisfactory search item --query iron
+    satisfactory search recipe --query iron-plate      # matches recipe names and products
+```
+
+### Build
+
+```bash
+    satisfactory build --query heavy-modular-frame --minute-rate 2
+```
+
+For each item of the production chain, the matching recipes are listed with their number in the `#` column: type that number to use the recipe, or `0` to consider the item as imported from a train station (unlimited supply). Imported items are not produced and are listed in the "Imports en gare" table.
+
+## Features
+
+### Data
+
 * [ ] verify - Checks the integrity of the current data file
 
 ### Bugs
 
-* [ ] Les taux de sortie sur l'affichage d'une factory ne sont pas multipliés par le nombre de machines 
+* [ ] Les taux d'entrée et de sortie sur l'affichage d'une factory ne sont pas multipliés par le nombre de machines (ils sont donnés pour une seule machine)
+* [ ] Un item sans recette de fabrication (leaves, mycelia, power slugs, remains, déchets nucléaires…) arrête le build sur "No recipe found" sans proposer l'import en gare : contournement, importer l'item parent (ex. `biomass`)
+* [ ] Choisir des recettes qui se consomment mutuellement (ex. `alt-recycled-plastic` / `alt-recycled-rubber`) fait boucler le build à l'infini (RecursionError)
 
 ### Build
 
@@ -45,4 +67,4 @@ To install **satis-factory-maker**, clone the repository and install the depende
 
 ### Problématiques
 
-* [ ] Traiter efficacement les produits dérivés en sortie
+* [ ] Traiter efficacement les produits dérivés en sortie (seul le premier produit d'une recette est pris en compte : choisir la recette `fuel` pour du polymer-resin crée une ligne `fuel`)
