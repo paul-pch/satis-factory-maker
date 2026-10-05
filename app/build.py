@@ -97,7 +97,7 @@ def get_item(query_item: str) -> dict[str, Any]:
 
 def get_minute_rate(recipe: Recipe, item: str, source: Literal["products", "ingredients"]) -> float:
     # Taux minute = (60 / (temps en secondes de production)) x Nombre produit de l'item en question pour cette recette
-    return (60 / int(recipe["time"])) * int(next(p[1] for p in recipe[source] if p[0] == item))
+    return (60 / float(recipe["time"])) * float(next(p[1] for p in recipe[source] if p[0] == item))
 
 
 def get_recipes_for_item(recipes: list[Recipe], query_item: str) -> list[Recipe]:

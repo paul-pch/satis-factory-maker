@@ -1,24 +1,24 @@
 import json
-import os
-import tempfile
-import unittest
+
+import pytest
+import typer
+
 from app.utils import load_data
 
 
-class TestUtils(unittest.TestCase):
-    def setUp(self):
-        self.temp_file = tempfile.NamedTemporaryFile(delete=False)
-        self.test_data = {"key": "value"}
-        with open(self.temp_file.name, "w") as f:
-            json.dump(self.test_data, f)
+def test_should_load_json_file(tmp_path):
+    file = tmp_path / "data.json"
+    file.write_text(json.dumps({"items": []}))
+    assert load_data(str(file)) == {"items": []}
 
-    def tearDown(self):
-        os.remove(self.temp_file.name)
 
-    def test_load_data(self):
-        data = load_data(self.temp_file.name)
-        self.assertEqual(data, self.test_data)
+def test_should_exit_when_file_is_missing(tmp_path):
+    with pytest.raises(typer.Exit):
+        load_data(str(tmp_path / "missing.json"))
 
-    def test_load_data_file_not_found(self):
-        with self.assertRaises(FileNotFoundError):
-            load_data("non_existent_file.json")
+
+def test_should_exit_when_file_is_not_json(tmp_path):
+    file = tmp_path / "data.json"
+    file.write_text("not json")
+    with pytest.raises(typer.Exit):
+        load_data(str(file))

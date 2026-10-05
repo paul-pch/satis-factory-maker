@@ -35,4 +35,7 @@ Dependencies are managed with uv (`uv add <pkg>`, `uv add --dev <pkg>`); runtime
 
 ## Tests
 
-Tests use `typer.testing.CliRunner` and `@patch("app.search.load_data")`. Because data is loaded at module import, that patch has no effect and tests actually run against the real `data/data.json`; several tests currently fail for this reason (and `test_load_data_file_not_found` expects `FileNotFoundError` while `load_data` raises `typer.Exit`). To mock data, patch the module globals (e.g. `app.search.ITEMS`) or move loading out of import time. `tests/test_build.py` is entirely commented out.
+- `search.py` and `build.py` load `data/data.json` at import time into module globals, so tests swap those globals with the `patched_data` fixture (`tests/conftest.py`, small hand-written data set) instead of patching `load_data`.
+- `build` prompts a recipe for every item of the chain, including items with a single recipe: feed one answer per item through `CliRunner.invoke(..., input=...)`.
+- `tests/test_parse.py` builds a minimal synthetic Docs file (helpers `item`, `recipe`, `entries`, `group`) in the game's format; extend it when `parse.py` handles new classes.
+- `tests/test_data.py` checks the consistency of the committed `data/data.json`; it runs against the real file.
