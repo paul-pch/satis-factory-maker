@@ -3,6 +3,7 @@
 import math
 from collections import defaultdict
 from collections.abc import Iterator
+from dataclasses import dataclass, field
 from typing import Annotated, Any, Literal, NoReturn
 
 import typer
@@ -24,6 +25,36 @@ FLUIDS = DATA.get("fluids", [])
 ID_DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 
+@dataclass
+class RecipeChoices:
+    """Recipe choices of a build: asked to the user or replayed from a factory ID.
+
+    In simple mode (default), the first choice made for an item is reused for every other occurrence of that item.
+    In complex mode, a choice is made for every node of the tree.
+    """
+
+    complex: bool = False
+    preset: Iterator[int] | None = None
+    made: list[int] = field(default_factory=list)
+    by_item: dict[str, int] = field(default_factory=dict)
+
+    def choose(self, item: str, matching_recipes: list[Recipe]) -> int:
+        if not self.complex and item in self.by_item:
+            return self.by_item[item]
+
+        if self.preset is not None:
+            choice = next(self.preset, None)
+            if choice is None or choice > len(matching_recipes):
+                invalid_factory_id()
+        else:
+            display_recipes(matching_recipes, "Matching recipes", numbered=True)
+            choice = choose_recipe(matching_recipes)
+
+        self.made.append(choice)
+        self.by_item.setdefault(item, choice)
+        return choice
+
+
 @app.callback(invoke_without_command=True)
 def build(
     ctx: typer.Context,
@@ -32,14 +63,17 @@ def build(
     factory_id: Annotated[
         str | None, typer.Option("--id", help="Factory ID printed by a previous build: replays its recipe choices")
     ] = None,
+    complex_mode: Annotated[
+        bool, typer.Option("--complex", help="Choose a recipe for every node of the tree, even for items already chosen")
+    ] = False,
 ):
     """
     Build factory layer based on item name.
     """
 
-    preset: Iterator[int] | None = None
+    choices = RecipeChoices(complex=complex_mode)
     if factory_id is not None:
-        query, preset = decode_factory_id(factory_id, query)
+        query, choices = decode_factory_id(factory_id, query, complex_mode)
     elif query is None:
         console.print("[red]Missing option '--query' (or '--id').[/red]")
         raise typer.Exit(code=1)
@@ -48,11 +82,10 @@ def build(
 
     factory: list[ProductionLine] = []
     imports: defaultdict[str, float] = defaultdict(float)
-    choices: list[int] = []
 
-    plan(factory, imports, item_complex, minute_rate, 0, choices, preset)
+    plan(factory, imports, item_complex, minute_rate, 0, choices)
 
-    if preset is not None and next(preset, None) is not None:
+    if choices.preset is not None and next(choices.preset, None) is not None:
         invalid_factory_id()
 
     factory = compact(factory)
@@ -111,19 +144,28 @@ def compact(factory: list[ProductionLine]) -> list[ProductionLine]:
     return factory
 
 
-def decode_factory_id(factory_id: str, query: str | None) -> tuple[str, Iterator[int]]:
-    """Split a factory ID into the target item and its recipe choices, in plan() order."""
-    item, _, digits = factory_id.rpartition(":")
-    if not item or any(d not in ID_DIGITS for d in digits):
+def decode_factory_id(factory_id: str, query: str | None, complex_mode: bool) -> tuple[str, RecipeChoices]:
+    """Split a factory ID into the target item and its recipe choices, in plan() order.
+
+    `item:choices` is a simple mode ID, `item::choices` a complex mode one.
+    """
+    item, separator, digits = factory_id.partition(":")
+    id_complex = digits.startswith(":")
+    digits = digits.removeprefix(":")
+    if not item or not separator or any(d not in ID_DIGITS for d in digits):
         invalid_factory_id()
     if query is not None and query != item:
         console.print(f"[red]Factory ID builds '{item}', not '{query}'.[/red]")
         raise typer.Exit(code=1)
-    return item, iter([ID_DIGITS.index(d) for d in digits])
+    if complex_mode and not id_complex:
+        console.print("[red]--complex given with a simple mode factory ID.[/red]")
+        raise typer.Exit(code=1)
+    return item, RecipeChoices(complex=id_complex, preset=iter([ID_DIGITS.index(d) for d in digits]))
 
 
-def encode_factory_id(item: str, choices: list[int]) -> str:
-    return f"{item}:{''.join(ID_DIGITS[c] for c in choices)}"
+def encode_factory_id(item: str, choices: RecipeChoices) -> str:
+    separator = "::" if choices.complex else ":"
+    return f"{item}{separator}{''.join(ID_DIGITS[c] for c in choices.made)}"
 
 
 def invalid_factory_id() -> NoReturn:
@@ -170,21 +212,13 @@ def plan(
     item_complex: dict[str, Any],
     target_minute_rate: float,
     layer: int,
-    choices: list[int],
-    preset: Iterator[int] | None = None,
+    choices: RecipeChoices,
 ) -> None:
     # Get the available recipe for item
     matching_recipes = get_recipes_for_item(RECIPES, item_complex["key_name"])
 
-    # Replay the factory ID choice, or ask the user to choose a recipe
-    if preset is not None:
-        choice = next(preset, None)
-        if choice is None or choice > len(matching_recipes):
-            invalid_factory_id()
-    else:
-        display_recipes(matching_recipes, "Matching recipes", numbered=True)
-        choice = choose_recipe(matching_recipes)
-    choices.append(choice)
+    # Ask the user to choose a recipe (or reuse / replay a choice)
+    choice = choices.choose(item_complex["key_name"], matching_recipes)
 
     if choice == 0:
         imports[item_complex["key_name"]] += target_minute_rate
@@ -216,5 +250,4 @@ def plan(
                 ingredient_minute_rate * num_machine,
                 layer + 1,
                 choices,
-                preset,
             )

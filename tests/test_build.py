@@ -188,3 +188,47 @@ class TestFactoryId:
         result = runner.invoke(app, ["--minute-rate", "30"])
         assert result.exit_code == 1
         assert "Missing option '--query' (or '--id')." in result.output
+
+    @pytest.mark.parametrize("factory_id", ["iron-plate:::21", "iron-plate"])
+    def test_should_fail_on_malformed_id(self, patched_data, factory_id):
+        result = runner.invoke(app, ["--id", factory_id, "--minute-rate", "30"])
+        assert result.exit_code == 1
+        assert "Invalid factory ID" in result.output
+
+
+class TestRecipeModes:
+    # iron-ingot is needed twice: by iron-plate and by iron-rod (for the screws)
+    def test_should_reuse_the_recipe_chosen_for_an_item(self, patched_data):
+        result = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n1\n1\n1\n1\n")
+        assert result.exit_code == 0, result.output
+        assert result.output.count("Choose a recipe") == 5
+        assert "ID usine : reinforced-iron-plate:11111" in result.output
+
+    def test_should_reuse_an_import_choice(self, patched_data):
+        result = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n1\n0\n1\n1\n")
+        assert result.exit_code == 0, result.output
+        assert result.output.count("Choose a recipe") == 5
+        assert row(result.output.split("Imports en gare")[-1], "iron-ingot") == ["iron-ingot", "90.0"]
+
+    def test_should_ask_every_node_in_complex_mode(self, patched_data):
+        # The plates' ingots are imported, the rods' ingots are smelted
+        args = ["--query", "reinforced-iron-plate", "--minute-rate", "5", "--complex"]
+        result = runner.invoke(app, args, input="1\n1\n0\n1\n1\n1\n")
+        assert result.exit_code == 0, result.output
+        assert result.output.count("Choose a recipe") == 6
+        assert row(result.output.split("Imports en gare")[-1], "iron-ingot") == ["iron-ingot", "60.0"]
+        assert "ID usine : reinforced-iron-plate::110111" in result.output
+
+    def test_should_replay_a_complex_mode_id(self, patched_data):
+        prompted = runner.invoke(
+            app, ["--query", "reinforced-iron-plate", "--minute-rate", "5", "--complex"], input="1\n1\n0\n1\n1\n1\n"
+        )
+        replayed = runner.invoke(app, ["--id", "reinforced-iron-plate::110111", "--minute-rate", "5"])
+        assert replayed.exit_code == 0, replayed.output
+        assert "Choose a recipe" not in replayed.output
+        assert replayed.output.split("Factory")[-1] == prompted.output.split("Factory")[-1]
+
+    def test_should_fail_on_complex_flag_with_a_simple_mode_id(self, patched_data):
+        result = runner.invoke(app, ["--id", "iron-plate:11", "--minute-rate", "30", "--complex"])
+        assert result.exit_code == 1
+        assert "--complex given with a simple mode factory ID." in result.output

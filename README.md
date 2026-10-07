@@ -43,7 +43,9 @@ Regenerate and commit `data/data.json` after each game update rather than editin
 
 For each item of the production chain, the matching recipes are listed with their number in the `#` column: type that number to use the recipe, or `0` to consider the item as imported from a train station (unlimited supply). Imported items are not produced and are listed in the "Imports en gare" table.
 
-At the end, the build prints an `ID usine` (e.g. `heavy-modular-frame:1210…`): the target item followed by one character per recipe choice. Pass it back with `--id` to rebuild the same factory without the prompts, at any rate:
+By default (simple mode), the recipe chosen for an item is reused everywhere that item appears in the chain: each item is asked only once. Add `--complex` to choose a recipe for every node of the tree (e.g. smelt the ingots of one branch and import those of another).
+
+At the end, the build prints an `ID usine` (e.g. `heavy-modular-frame:1210…`): the target item followed by one character per recipe choice (`item:…` in simple mode, `item::…` in complex mode, which `--id` replays in the same mode). Pass it back with `--id` to rebuild the same factory without the prompts, at any rate:
 
 ```bash
     satisfactory build --id heavy-modular-frame:1210… --minute-rate 10
