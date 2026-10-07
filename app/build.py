@@ -38,7 +38,7 @@ class RecipeChoices:
     made: list[int] = field(default_factory=list)
     by_item: dict[str, int] = field(default_factory=dict)
 
-    def choose(self, item: str, matching_recipes: list[Recipe]) -> int:
+    def choose(self, item: str, matching_recipes: list[Recipe], minute_rate: float) -> int:
         if not self.complex and item in self.by_item:
             return self.by_item[item]
 
@@ -47,7 +47,7 @@ class RecipeChoices:
             if choice is None or choice > len(matching_recipes):
                 invalid_factory_id()
         else:
-            display_recipes(matching_recipes, "Matching recipes", numbered=True)
+            display_recipes(matching_recipes, f"Matching recipes · [bold]{item}[/bold] · {minute_rate:.2f}/min", numbered=True)
             choice = choose_recipe(matching_recipes)
 
         self.made.append(choice)
@@ -89,7 +89,7 @@ def build(
         invalid_factory_id()
 
     factory = compact(factory)
-    display_factory(factory)
+    display_factory(factory, f"Factory · [bold]{query}[/bold] · {minute_rate:.2f}/min")
 
     raw_resources = get_resources_rate(factory)
     display_resources(raw_resources)
@@ -218,7 +218,7 @@ def plan(
     matching_recipes = get_recipes_for_item(RECIPES, item_complex["key_name"])
 
     # Ask the user to choose a recipe (or reuse / replay a choice)
-    choice = choices.choose(item_complex["key_name"], matching_recipes)
+    choice = choices.choose(item_complex["key_name"], matching_recipes, target_minute_rate)
 
     if choice == 0:
         imports[item_complex["key_name"]] += target_minute_rate

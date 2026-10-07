@@ -235,3 +235,16 @@ class TestRecipeModes:
         result = runner.invoke(app, ["--id", "iron-plate:11", "--minute-rate", "30", "--complex"])
         assert result.exit_code == 1
         assert "--complex given with a simple mode factory ID." in result.output
+
+
+class TestTitles:
+    def test_should_name_the_item_and_rate_of_each_recipe_choice(self, patched_data):
+        result = runner.invoke(app, ["--query", "iron-plate", "--minute-rate", "60"], input="2\n1\n")
+        assert result.exit_code == 0, result.output
+        assert "Matching recipes · iron-plate · 60.00/min" in result.output
+        assert "Matching recipes · iron-ingot · 120.00/min" in result.output
+
+    def test_should_name_the_target_in_the_factory_title(self, patched_data):
+        result = runner.invoke(app, ["--query", "iron-plate", "--minute-rate", "60"], input="2\n1\n")
+        assert result.exit_code == 0, result.output
+        assert "Factory · iron-plate · 60.00/min" in result.output
