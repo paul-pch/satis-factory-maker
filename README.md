@@ -45,10 +45,6 @@ For each item of the production chain, the matching recipes are listed with thei
 
 ## Features
 
-### Data
-
-* [ ] verify - Checks the integrity of the current data file
-
 ### Bugs
 
 * [ ] Les taux d'entrée et de sortie sur l'affichage d'une factory ne sont pas multipliés par le nombre de machines (ils sont donnés pour une seule machine)

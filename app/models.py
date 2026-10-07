@@ -6,7 +6,7 @@ class Recipe(TypedDict):
     name: str
     key_name: str
     category: str
-    time: int
+    time: float
     ingredients: list[tuple[str, float]]
     products: list[tuple[str, float]]
 

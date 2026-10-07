@@ -25,5 +25,5 @@ integrate:
 
 clean:
 	rm -rf $(DIST_DIR) build *.egg-info coverage-report .coverage .pytest_cache **/__pycache__ $(APP_NAME).spec
-	rm -rf .venv
+	rm -rf .venv venv __pycache__ .ruff_cache
 	@echo "Build artifacts removed"

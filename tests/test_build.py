@@ -2,7 +2,7 @@ import pytest
 from typer.testing import CliRunner
 
 from app.build import app, check_ingredients, compact, get_minute_rate, get_resources_rate
-from app.models import ProductionLine
+from app.models import ProductionLine, Recipe
 
 runner = CliRunner()
 
@@ -20,7 +20,7 @@ def row(output: str, first_cell: str) -> list[str]:
     raise AssertionError(f"no row {first_cell!r} in output")
 
 
-def recipe(data, key_name):
+def recipe(data, key_name) -> Recipe:
     return next(r for r in data["recipes"] if r["key_name"] == key_name)
 
 
@@ -32,11 +32,11 @@ class TestMinuteRate:
         assert get_minute_rate(recipe(data, "reinforced-iron-plate"), "screws", "ingredients") == 60
 
     def test_should_keep_fractional_quantities(self, data):
-        fractional = {**recipe(data, "iron-ingot"), "ingredients": [["iron-ore", 2.5]]}
+        fractional: Recipe = {**recipe(data, "iron-ingot"), "ingredients": [("iron-ore", 2.5)]}
         assert get_minute_rate(fractional, "iron-ore", "ingredients") == 75
 
     def test_should_keep_fractional_time(self, data):
-        fractional = {**recipe(data, "iron-ingot"), "time": 2.4}
+        fractional: Recipe = {**recipe(data, "iron-ingot"), "time": 2.4}
         assert get_minute_rate(fractional, "iron-ingot", "products") == pytest.approx(25)
 
 
@@ -143,3 +143,48 @@ class TestBuildCommand:
         result = runner.invoke(app, ["--query", "iron-plate"])
         assert result.exit_code == 2
         assert "--minute-rate" in result.output
+
+
+class TestFactoryId:
+    def test_should_print_the_factory_id(self, patched_data):
+        # reinforced-iron-plate, iron-plate (alternate), iron-ingot, then screws imported
+        result = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n2\n1\n0\n")
+        assert result.exit_code == 0, result.output
+        assert "Factory ID: reinforced-iron-plate:1210" in result.output
+
+    def test_should_rebuild_the_factory_without_prompting(self, patched_data):
+        prompted = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n2\n1\n0\n")
+        replayed = runner.invoke(app, ["--id", "reinforced-iron-plate:1210", "--minute-rate", "5"])
+        assert replayed.exit_code == 0, replayed.output
+        assert "Choose a recipe" not in replayed.output
+        assert replayed.output.split("Factory")[-1] == prompted.output.split("Factory")[-1]
+
+    def test_should_rebuild_the_factory_at_another_rate(self, patched_data):
+        # Same choices as test_should_compute_machines_and_resources, at twice the rate
+        result = runner.invoke(app, ["--id", "iron-plate:21", "--minute-rate", "120"])
+        assert result.exit_code == 0, result.output
+        factory, resources = result.output.split("Factory")[-1].split("Ressources requises")
+        assert row(factory, "0")[1:4] == ["iron-plate", "crafting1", "3"]
+        assert row(factory, "1")[1:4] == ["iron-ingot", "smelting1", "8"]
+        assert row(resources, "water") == ["water", "90.0"]
+        assert "Factory ID: iron-plate:21" in result.output
+
+    def test_should_accept_a_matching_query(self, patched_data):
+        result = runner.invoke(app, ["--query", "iron-ingot", "--id", "iron-ingot:1", "--minute-rate", "30"])
+        assert result.exit_code == 0, result.output
+
+    def test_should_fail_when_query_and_id_disagree(self, patched_data):
+        result = runner.invoke(app, ["--query", "iron-plate", "--id", "iron-ingot:1", "--minute-rate", "30"])
+        assert result.exit_code == 1
+        assert "Factory ID builds 'iron-ingot', not 'iron-plate'." in result.output
+
+    @pytest.mark.parametrize("factory_id", ["iron-plate:2", "iron-plate:211", "iron-plate:31", "iron-plate:2!", "21"])
+    def test_should_fail_on_invalid_id(self, patched_data, factory_id):
+        result = runner.invoke(app, ["--id", factory_id, "--minute-rate", "30"])
+        assert result.exit_code == 1
+        assert "Invalid factory ID" in result.output
+
+    def test_should_require_query_or_id(self, patched_data):
+        result = runner.invoke(app, ["--minute-rate", "30"])
+        assert result.exit_code == 1
+        assert "Missing option '--query' (or '--id')." in result.output
