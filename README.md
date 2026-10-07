@@ -68,8 +68,6 @@ The choices are recipe positions in `data/data.json`: an ID may become invalid a
 * * Ajouter la possibilité de pas traiter un item (quand il est importé comme le caoutchou/plastique)
 * * Contraindre le build d'une usine pour que chaque item soit en surproduction
 * * Possibilité de ne pas faire de limit rate ? (defaut output de recipe)
-
-en mode simple (par défaut) je veux que les recette que j'ai déjà choisies soient réutilisées pour les même items. Je garde un mode complexe pour choisir chaque recette de l'arbre
  
 ### Problématiques
 
