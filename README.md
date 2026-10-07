@@ -43,24 +43,33 @@ Regenerate and commit `data/data.json` after each game update rather than editin
 
 For each item of the production chain, the matching recipes are listed with their number in the `#` column: type that number to use the recipe, or `0` to consider the item as imported from a train station (unlimited supply). Imported items are not produced and are listed in the "Imports en gare" table.
 
+At the end, the build prints an `ID usine` (e.g. `heavy-modular-frame:1210…`): the target item followed by one character per recipe choice. Pass it back with `--id` to rebuild the same factory without the prompts, at any rate:
+
+```bash
+    satisfactory build --id heavy-modular-frame:1210… --minute-rate 10
+```
+
+The choices are recipe positions in `data/data.json`: an ID may become invalid after a game update.
+
 ## Features
 
 ### Bugs
 
-* [ ] Les taux d'entrée et de sortie sur l'affichage d'une factory ne sont pas multipliés par le nombre de machines (ils sont donnés pour une seule machine)
-* [ ] Un item sans recette de fabrication (leaves, mycelia, power slugs, remains, déchets nucléaires…) arrête le build sur "No recipe found" sans proposer l'import en gare : contournement, importer l'item parent (ex. `biomass`)
-* [ ] Choisir des recettes qui se consomment mutuellement (ex. `alt-recycled-plastic` / `alt-recycled-rubber`) fait boucler le build à l'infini (RecursionError)
+* Les taux d'entrée et de sortie sur l'affichage d'une factory ne sont pas multipliés par le nombre de machines (ils sont donnés pour une seule machine)
+* Un item sans recette de fabrication (leaves, mycelia, power slugs, remains, déchets nucléaires…) arrête le build sur "No recipe found" sans proposer l'import en gare : contournement, importer l'item parent (ex. `biomass`)
+* Choisir des recettes qui se consomment mutuellement (ex. `alt-recycled-plastic` / `alt-recycled-rubber`) fait boucler le build à l'infini (RecursionError)
 
 ### Build
 
-* [ ] Build factory lines from target item with 100% efficiency
-* * [ ] Afficher les surproduction ou les équilibrage sur les Productionline
-* * [ ] Ajouter une feature de sauvegarde/lecture des usines
-* * [ ] Ajouter la possibilité de cibler 2 items avec 2 taux minutes
-* * [ ] Ajouter la possibilité de pas traiter un item (quand il est importé comme le caoutchou/plastique)
-* * [ ] Contraindre le build d'une usine pour que chaque item soit en surproduction
-* * [ ] Possibilité de ne pas faire de limit rate ? (defaut output de recipe)
+* Build factory lines from target item with 100% efficiency
+* * Afficher les surproduction ou les équilibrage sur les Productionline
+* * Ajouter la possibilité de cibler 2 items avec 2 taux minutes
+* * Ajouter la possibilité de pas traiter un item (quand il est importé comme le caoutchou/plastique)
+* * Contraindre le build d'une usine pour que chaque item soit en surproduction
+* * Possibilité de ne pas faire de limit rate ? (defaut output de recipe)
 
+en mode simple (par défaut) je veux que les recette que j'ai déjà choisies soient réutilisées pour les même items. Je garde un mode complexe pour choisir chaque recette de l'arbre
+ 
 ### Problématiques
 
-* [ ] Traiter efficacement les produits dérivés en sortie (seul le premier produit d'une recette est pris en compte : choisir la recette `fuel` pour du polymer-resin crée une ligne `fuel`)
+* Traiter efficacement les produits dérivés en sortie (seul le premier produit d'une recette est pris en compte : choisir la recette `fuel` pour du polymer-resin crée une ligne `fuel`)

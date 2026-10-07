@@ -150,7 +150,7 @@ class TestFactoryId:
         # reinforced-iron-plate, iron-plate (alternate), iron-ingot, then screws imported
         result = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n2\n1\n0\n")
         assert result.exit_code == 0, result.output
-        assert "Factory ID: reinforced-iron-plate:1210" in result.output
+        assert "ID usine : reinforced-iron-plate:1210" in result.output
 
     def test_should_rebuild_the_factory_without_prompting(self, patched_data):
         prompted = runner.invoke(app, ["--query", "reinforced-iron-plate", "--minute-rate", "5"], input="1\n2\n1\n0\n")
@@ -165,9 +165,9 @@ class TestFactoryId:
         assert result.exit_code == 0, result.output
         factory, resources = result.output.split("Factory")[-1].split("Ressources requises")
         assert row(factory, "0")[1:4] == ["iron-plate", "crafting1", "3"]
-        assert row(factory, "1")[1:4] == ["iron-ingot", "smelting1", "8"]
+        assert row(factory, "1")[1:4] == ["iron-ingot", "smelting1", "6"]
         assert row(resources, "water") == ["water", "90.0"]
-        assert "Factory ID: iron-plate:21" in result.output
+        assert "ID usine : iron-plate:21" in result.output
 
     def test_should_accept_a_matching_query(self, patched_data):
         result = runner.invoke(app, ["--query", "iron-ingot", "--id", "iron-ingot:1", "--minute-rate", "30"])

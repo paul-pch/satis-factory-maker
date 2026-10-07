@@ -2,7 +2,8 @@
 
 import math
 from collections import defaultdict
-from typing import Annotated, Any, Literal
+from collections.abc import Iterator
+from typing import Annotated, Any, Literal, NoReturn
 
 import typer
 from rich.console import Console
@@ -20,23 +21,39 @@ RECIPES = DATA.get("recipes", [])
 RESOURCES = DATA.get("resources", [])
 FLUIDS = DATA.get("fluids", [])
 
+ID_DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
+
 
 @app.callback(invoke_without_command=True)
 def build(
     ctx: typer.Context,
-    query: Annotated[str, typer.Option(help="Item to build")],
     minute_rate: Annotated[float, typer.Option(help="'Minute rate' wanted for the item")],
+    query: Annotated[str | None, typer.Option(help="Item to build")] = None,
+    factory_id: Annotated[
+        str | None, typer.Option("--id", help="Factory ID printed by a previous build: replays its recipe choices")
+    ] = None,
 ):
     """
     Build factory layer based on item name.
     """
 
+    preset: Iterator[int] | None = None
+    if factory_id is not None:
+        query, preset = decode_factory_id(factory_id, query)
+    elif query is None:
+        console.print("[red]Missing option '--query' (or '--id').[/red]")
+        raise typer.Exit(code=1)
+
     item_complex = get_item(query)
 
     factory: list[ProductionLine] = []
     imports: defaultdict[str, float] = defaultdict(float)
+    choices: list[int] = []
 
-    plan(factory, imports, item_complex, minute_rate, 0)
+    plan(factory, imports, item_complex, minute_rate, 0, choices, preset)
+
+    if preset is not None and next(preset, None) is not None:
+        invalid_factory_id()
 
     factory = compact(factory)
     display_factory(factory)
@@ -46,6 +63,8 @@ def build(
 
     if imports:
         display_resources(imports, "Imports en gare")
+
+    console.print(f"ID usine : [bold]{encode_factory_id(query, choices)}[/bold]")
 
 
 def check_ingredients(recipe: Recipe) -> list[str]:
@@ -59,8 +78,8 @@ def check_ingredients(recipe: Recipe) -> list[str]:
     return complex_ingredients
 
 
-def choose_recipe(matching_recipes: list[Recipe]) -> Recipe | None:
-    """Return the chosen recipe, or None when the item is imported (unlimited supply from a train station)."""
+def choose_recipe(matching_recipes: list[Recipe]) -> int:
+    """Return the chosen recipe number: 1-based index in matching_recipes, 0 when the item is imported."""
     console.print("Choose a recipe to use:")
     console.print("[0] import (unlimited supply from a train station)")
     for i, recipe in enumerate(matching_recipes):
@@ -71,9 +90,7 @@ def choose_recipe(matching_recipes: list[Recipe]) -> Recipe | None:
         if choice < 0 or choice > len(matching_recipes):
             console.print("[red]Invalid choice.[/red]")
             raise typer.Exit(code=1)
-        if choice == 0:
-            return None
-        return matching_recipes[choice - 1]
+        return choice
     except ValueError:
         console.print("[red]Invalid choice.[/red]")
         raise typer.Exit(code=1)
@@ -92,6 +109,26 @@ def compact(factory: list[ProductionLine]) -> list[ProductionLine]:
     factory.sort(key=lambda x: x.layer)
 
     return factory
+
+
+def decode_factory_id(factory_id: str, query: str | None) -> tuple[str, Iterator[int]]:
+    """Split a factory ID into the target item and its recipe choices, in plan() order."""
+    item, _, digits = factory_id.rpartition(":")
+    if not item or any(d not in ID_DIGITS for d in digits):
+        invalid_factory_id()
+    if query is not None and query != item:
+        console.print(f"[red]Factory ID builds '{item}', not '{query}'.[/red]")
+        raise typer.Exit(code=1)
+    return item, iter([ID_DIGITS.index(d) for d in digits])
+
+
+def encode_factory_id(item: str, choices: list[int]) -> str:
+    return f"{item}:{''.join(ID_DIGITS[c] for c in choices)}"
+
+
+def invalid_factory_id() -> NoReturn:
+    console.print("[red]Invalid factory ID (or game data changed since it was generated).[/red]")
+    raise typer.Exit(code=1)
 
 
 def get_item(query_item: str) -> dict[str, Any]:
@@ -133,16 +170,26 @@ def plan(
     item_complex: dict[str, Any],
     target_minute_rate: float,
     layer: int,
+    choices: list[int],
+    preset: Iterator[int] | None = None,
 ) -> None:
     # Get the available recipe for item
     matching_recipes = get_recipes_for_item(RECIPES, item_complex["key_name"])
-    display_recipes(matching_recipes, "Matching recipes", numbered=True)
 
-    # Ask the user to choose a recipe
-    recipe = choose_recipe(matching_recipes)
-    if recipe is None:
+    # Replay the factory ID choice, or ask the user to choose a recipe
+    if preset is not None:
+        choice = next(preset, None)
+        if choice is None or choice > len(matching_recipes):
+            invalid_factory_id()
+    else:
+        display_recipes(matching_recipes, "Matching recipes", numbered=True)
+        choice = choose_recipe(matching_recipes)
+    choices.append(choice)
+
+    if choice == 0:
         imports[item_complex["key_name"]] += target_minute_rate
         return
+    recipe = matching_recipes[choice - 1]
 
     default_recipe_minute_rate = get_minute_rate(recipe, item_complex["key_name"], "products")
     num_machine: int = math.ceil(target_minute_rate / default_recipe_minute_rate)
@@ -168,4 +215,6 @@ def plan(
                 get_item(ingredient),
                 ingredient_minute_rate * num_machine,
                 layer + 1,
+                choices,
+                preset,
             )
