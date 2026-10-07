@@ -57,7 +57,6 @@ The choices are recipe positions in `data/data.json`: an ID may become invalid a
 
 ### Bugs
 
-* Les taux d'entrée et de sortie sur l'affichage d'une factory ne sont pas multipliés par le nombre de machines (ils sont donnés pour une seule machine)
 * Un item sans recette de fabrication (leaves, mycelia, power slugs, remains, déchets nucléaires…) arrête le build sur "No recipe found" sans proposer l'import en gare : contournement, importer l'item parent (ex. `biomass`)
 * Choisir des recettes qui se consomment mutuellement (ex. `alt-recycled-plastic` / `alt-recycled-rubber`) fait boucler le build à l'infini (RecursionError)
 

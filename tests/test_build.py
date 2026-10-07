@@ -89,6 +89,9 @@ class TestBuildCommand:
         factory, resources = result.output.split("Factory")[-1].split("Ressources requises")
         assert row(factory, "0")[1:4] == ["iron-plate", "crafting1", "2"]
         assert row(factory, "1")[1:4] == ["iron-ingot", "smelting1", "4"]
+        # Line rates: per machine rate x number of machines
+        assert row(factory, "0")[4:] == ["iron-ingot x6, water x3", "120.00/min, 60.00/min", "iron-plate x4", "80.00/min"]
+        assert row(factory, "1")[4:] == ["iron-ore x1", "120.00/min", "iron-ingot x1", "120.00/min"]
         assert row(resources, "iron-ore") == ["iron-ore", "120.0"]
         assert row(resources, "water") == ["water", "60.0"]
 

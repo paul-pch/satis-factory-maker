@@ -94,10 +94,10 @@ def display_factory(factory: list[ProductionLine], title: str = "Factory") -> No
     for prod_line in factory:
         ingredients = ", ".join(f"{name} x{qty}" for name, qty in prod_line.recipe["ingredients"])
         products = ", ".join(f"{name} x{qty}" for name, qty in prod_line.recipe["products"])
-        ingredients_rate = ", ".join(
-            f"{qty / prod_line.recipe['time'] * 60:.2f}/min" for _, qty in prod_line.recipe["ingredients"]
-        )
-        products_rate = ", ".join(f"{qty / prod_line.recipe['time'] * 60:.2f}/min" for _, qty in prod_line.recipe["products"])
+        # Rates of the whole line: every machine of the line at 100%
+        line_rate = prod_line.num_machine / prod_line.recipe["time"] * 60
+        ingredients_rate = ", ".join(f"{qty * line_rate:.2f}/min" for _, qty in prod_line.recipe["ingredients"])
+        products_rate = ", ".join(f"{qty * line_rate:.2f}/min" for _, qty in prod_line.recipe["products"])
         table.add_row(
             str(prod_line.layer),
             prod_line.item,
